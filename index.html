@@ -236,6 +236,10 @@ table.inv-list tr.unbilled:hover td { background: #fff5d6; }
 .inv-num-input::placeholder { color: var(--gray3); font-style: italic; }
 .inv-date-input { border: 1.5px solid var(--accent); border-radius: 5px; padding: 3px 6px; font-size: 0.78rem; outline: none; background: #fffbeb; font-family: inherit; cursor: pointer; }
 .inv-date-input:focus { border-color: var(--blue); background: white; }
+.inv-amt-input { border: 1.5px solid var(--accent); border-radius: 5px; padding: 4px 7px; font-size: 0.8rem; width: 80px; outline: none; background: #fffbeb; font-family: inherit; }
+.inv-amt-input:focus { border-color: var(--blue); background: white; }
+.inv-lock-btn { border: none; background: none; cursor: pointer; font-size: 0.85rem; line-height: 1; padding: 0 2px; vertical-align: middle; opacity: 0.55; }
+.inv-lock-btn:hover { opacity: 1; }
 .inv-status-billed { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; background: #d4edda; color: #155724; }
 .inv-status-pending { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; background: #fff3cd; color: #856404; }
 .inv-status-future { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; background: #e2d9f3; color: #6f42c1; }
@@ -531,6 +535,7 @@ let lineItems = [];
 let activeTab = 'invoices';
 let renewalCustomRows = [];
 let servicesEditMode = false;   // Services Included card: locked (false) vs editable (true)
+let unlockedInvoiceGroups = new Set();   // groupKeys (agr::groupKey) unlocked for one-off amount editing
 
 const SERVICES = [
   'Central Station Monitoring','Alarm.com Services','ConnectOne Services',
@@ -943,8 +948,7 @@ async function init() {
   if (!(await ensureSignedIn())) return;
   installIdleLogout();   // auto sign-out after 2h of inactivity
   await loadAllFromCloud();
-  // Blank development build: account & invoice data lives in Supabase; the
-  // one-time seed generators were stripped out. Just load and render.
+  // Blank development build: data lives in Supabase; seed generators stripped.
   renderList();
 }
 
@@ -1545,6 +1549,7 @@ function selectAccount(idx) {
   emailChecked.clear();
   invoiceHistoryExpanded = false;
   servicesEditMode = false;
+  unlockedInvoiceGroups.clear();
   renderList();
   renderDetail(DB[idx]);
 }
@@ -1745,6 +1750,30 @@ function setGroupInvNum(agr, groupKey, val) {
   g.sites.forEach(s => { s.inv.invNum = v; });
   saveData();   // no re-render: keeps the input focused, mirrors single-site behavior
 }
+
+// One-off amount editing for a single unbilled invoice. Unlock toggles an inline
+// input; the edit changes ONLY that invoice and never the agreement's standing
+// terms. Marked manualAmount so a later charge/frequency change leaves it alone.
+function toggleInvoiceLock(agr, groupKey){
+  const k = agr+'::'+groupKey;
+  if(unlockedInvoiceGroups.has(k)) unlockedInvoiceGroups.delete(k);
+  else unlockedInvoiceGroups.add(k);
+  renderTab();
+}
+function setInvoiceAmount(agr, groupKey, val){
+  const g = _findGroup(agr, groupKey); if(!g) return;
+  if(g.allBilled || g.nSites!==1) return;           // billed + consolidated rows are off-limits
+  const amt = parseFloat(String(val).replace(/[$,]/g,''));
+  if(isNaN(amt) || amt < 0) { renderTab(); return; }
+  const inv = g.sites[0].inv;
+  inv.amount = amt;
+  inv.manualAmount = true;                          // protect this one-off from cascades
+  const r = DB.find(x => String(x['Agreement#']) === String(agr));
+  if(Array.isArray(inv.lineItems) && inv.lineItems.length) inv.lineItems[0].price = amt;
+  else inv.lineItems = [{desc:(r&&r['Account Name'])||'Service', qty:1, price:amt}];
+  saveData(); renderTab();
+  showNotice('✓ Invoice set to '+fmt(amt)+' (this invoice only)');
+}
 function markGroupBilled(agr, groupKey) {
   const g = _findGroup(agr, groupKey); if (!g) return;
   g.sites.forEach(s => { s.inv.billed = true; });
@@ -1874,6 +1903,23 @@ function renderInvoiceTab() {
     const siteBadge = g.nSites>1
       ? `<div style="font-size:0.7rem;color:var(--blue);margin-top:2px;">${g.nSites} sites · one invoice</div>` : '';
     const allChecked = g.sites.every(s => emailChecked.has(emailInvKey(s.csKey, s.inv.invNum, s.inv.date, s.inv.amount)));
+    // Amount cell: billed rows and multi-site consolidated rows stay read-only.
+    // Single-site unbilled rows get a 🔒 unlock toggle → inline one-off amount edit.
+    const amtEditable = !g.allBilled && g.nSites===1;
+    const amtUnlocked = amtEditable && unlockedInvoiceGroups.has(agr+'::'+g.groupKey);
+    const overridden = amtEditable && g.sites[0].inv.manualAmount;
+    let amountCell;
+    if(!amtEditable){
+      amountCell = fmt(g.amount);
+    } else if(amtUnlocked){
+      amountCell = `<input class="inv-amt-input" type="text" value="${(Number(g.amount)||0).toFixed(2)}"
+          onchange="setInvoiceAmount('${agr}','${g.groupKey}',this.value)"
+          title="One-off amount for this invoice only — agreement terms are unchanged">
+        <button class="inv-lock-btn" title="Lock this amount" onclick="toggleInvoiceLock('${agr}','${g.groupKey}')">🔓</button>`;
+    } else {
+      amountCell = `<span${overridden?' style="color:var(--blue);font-weight:600;" title="Custom one-off amount"':''}>${fmt(g.amount)}</span>`
+        + ` <button class="inv-lock-btn" title="Unlock to set a one-off amount for just this invoice" onclick="toggleInvoiceLock('${agr}','${g.groupKey}')">🔒</button>`;
+    }
     return `<tr class="${g.allBilled?'billed':'unbilled'}">
       <td style="text-align:center;">
         <input type="checkbox" class="inv-email-check" ${allChecked?'checked':''}
@@ -1885,7 +1931,7 @@ function renderInvoiceTab() {
         : `<input class="inv-date-input" type="date" value="${mdyToISO(g.date)}" onchange="setGroupDate('${agr}','${g.groupKey}',this.value)" title="Adjust this scheduled date — later scheduled invoices shift by the billing frequency">`
       }${siteBadge}</td>
       <td>${invNumCell}</td>
-      <td>${fmt(g.amount)}</td>
+      <td style="white-space:nowrap;">${amountCell}</td>
       <td>${esc(g.period||'')}</td>
       <td>${stLabel}</td>
       <td style="white-space:nowrap;">
@@ -4050,7 +4096,7 @@ function accountHasCustomSchedule(r){
 // A future invoice the schedule owns and may rebuild: unbilled, no invoice #
 // entered, and created by an auto generator.
 function _isRebuildable(inv){
-  return !inv.billed && !(inv.invNum||'').toString().trim() && (inv.freqSeed||inv.customSeed||inv.renewal);
+  return !inv.billed && !(inv.invNum||'').toString().trim() && !inv.manualAmount && (inv.freqSeed||inv.customSeed||inv.renewal);
 }
 function _futureScheduleCount(idx){
   const key = makeKey(DB[idx]);
@@ -4162,7 +4208,7 @@ function changeBillingCharge(idx, val){
   if(RECURRING_INTERVAL[(r['Billing Frequency']||'').trim()] && amt>0){
     const key = makeKey(r); let n=0;
     (invoiceDB[key]||[]).forEach(inv=>{
-      if(inv.freqSeed && !inv.billed){
+      if(inv.freqSeed && !inv.billed && !inv.manualAmount){
         inv.amount = amt;
         if(Array.isArray(inv.lineItems) && inv.lineItems.length) inv.lineItems[0].price = amt;
         else inv.lineItems=[{desc:r['Account Name']||'Service',qty:1,price:amt}];
