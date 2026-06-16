@@ -2421,8 +2421,14 @@ function renderDetailTab() {
       ${_siteAddrCard(r, idx)}
       <div class="info-card">
         <h3>Agreement Terms <span style="font-size:0.66rem;color:var(--blue);font-weight:400;font-style:italic">(click to edit)</span></h3>
-        ${editField('Agreement Effective Date','Effective',r['Agreement Effective Date'])}
-        ${editField('Agreement Expiration Date','Expires',r['Agreement Expiration Date'])}
+        <div class="info-row">
+          <span class="info-label">Effective</span>
+          <input class="editable-field" value="${esc(r['Agreement Effective Date']||'')}" onchange="updateTermDate(${idx},'Agreement Effective Date',this.value)" title="Contract start — adjusts the future schedule for recurring agreements">
+        </div>
+        <div class="info-row">
+          <span class="info-label">Expires</span>
+          <input class="editable-field" value="${esc(r['Agreement Expiration Date']||'')}" onchange="updateTermDate(${idx},'Agreement Expiration Date',this.value)" title="Contract end — extends or trims the future schedule for recurring agreements">
+        </div>
         <div class="info-row" style="align-items:center;gap:6px;">
           <span class="info-label">Payment Terms</span>
           <select class="editable-field" style="flex:1;" onchange="updateTermField(${idx},'Payment Terms',this.value)">
@@ -4229,6 +4235,23 @@ function updateTermField(idx, field, val){
     (invoiceDB[key]||[]).forEach(inv=>{ if(!inv.billed) inv.due = val; });
   }
   saveData(); renderDetail(r);
+}
+
+// Effective / Expiration date edits. For a recurring agreement these change the
+// schedule window, so rebuild the future invoices (extend or trim to the new
+// dates); billed history and one-off overrides are preserved. Custom-schedule
+// and non-recurring agreements just store the value.
+function updateTermDate(idx, field, val){
+  const r = DB[idx];
+  r[field] = val;
+  const freq = (r['Billing Frequency']||'').trim();
+  if(RECURRING_INTERVAL[freq] && !accountHasCustomSchedule(r)){
+    const n = regenRecurringSchedule(idx);
+    saveData(); renderDetail(r); renderList();
+    showNotice('✓ Schedule updated to the new dates — '+n+' future invoice'+(n!==1?'s':''));
+  } else {
+    saveData(); renderDetail(r);
+  }
 }
 
 // ── Custom schedule slot editing (Billing Frequency = Custom) ────────────────
