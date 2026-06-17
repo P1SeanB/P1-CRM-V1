@@ -226,6 +226,9 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray1);
 .editable-field { border: none; background: transparent; font-size: 0.79rem; font-weight: 500; color: var(--text); text-align: right; width: 100%; font-family: inherit; border-bottom: 1px dashed var(--gray3); outline: none; cursor: text; }
 .editable-field:focus { border-bottom: 1.5px solid var(--blue); background: #f0f5ff; }
 
+/* Auto-growing single-line fields: wrap long emails/addresses and expand vertically */
+.grow-field { resize: none; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; line-height: 1.4; padding: 0; margin: 0; min-height: 1.4em; box-sizing: border-box; display: block; vertical-align: bottom; }
+
 /* Account Details — locked top panels: fields display as plain read-only values */
 .cards-row.locked .editable-field { border-bottom-color: transparent; cursor: default; pointer-events: none; }
 .cards-row.locked .editable-field:focus { background: transparent; border-bottom: 1px solid transparent; }
@@ -802,8 +805,9 @@ function _siteAddrCard(r, idx){
   function _ef(field,label,val){
     var lk = (typeof detailsLocked!=='undefined' && detailsLocked) ? 'readonly tabindex="-1"' : '';
     return '<div class="info-row"><span class="info-label">'+label+'</span>'+
-      '<input class="editable-field" value="'+esc(val||'')+'" '+lk+' '+
-      'onchange="updateField('+idx+',\''+field+'\',this.value)" title="Click to edit"></div>';
+      '<textarea class="editable-field grow-field" rows="1" '+lk+' spellcheck="false" '+
+      'oninput="autoGrow(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}" '+
+      'onchange="updateField('+idx+',\''+field+'\',this.value)" title="Click to edit">'+esc(val||'')+'</textarea></div>';
   }
   return '<div class="info-card">'+head+'(click to edit)</span></h3>'+
     _ef('Site Address','Address',r['Site Address'])+
@@ -3212,10 +3216,21 @@ function renderTab() {
   const tc = document.getElementById('tab-content');
   if (!tc) return;
   if (activeTab==='invoices') tc.innerHTML = renderInvoiceTab();
-  else if (activeTab==='detail') tc.innerHTML = renderDetailTab();
+  else if (activeTab==='detail') { tc.innerHTML = renderDetailTab(); requestAnimationFrame(sizeGrowFields); }
   else if (activeTab==='email') tc.innerHTML = renderEmailTab();
   else tc.innerHTML = renderGenerateTab();
   if (activeTab==='generate') initLineItems();
+}
+
+// Auto-size a single-line textarea to fit its (possibly wrapped) content.
+function autoGrow(el){
+  if(!el) return;
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight) + 'px';
+}
+// Size every auto-grow field currently on screen (run after the detail tab renders).
+function sizeGrowFields(){
+  document.querySelectorAll('#tab-content .grow-field').forEach(autoGrow);
 }
 
 // ── Invoice History Tab ────────────────────────────────────────────────────
@@ -4002,7 +4017,9 @@ function renderDetailTab() {
     const ttl = isLocked ? 'Locked — click Unlock to edit' : 'Click to edit';
     return `<div class="info-row">
       <span class="info-label">${label}</span>
-      <input class="editable-field" value="${esc(val||'')}" ${ro} onchange="updateField(${idx},'${field}',this.value)" title="${ttl}">
+      <textarea class="editable-field grow-field" rows="1" ${ro} spellcheck="false"
+        oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+        onchange="updateField(${idx},'${field}',this.value)" title="${ttl}">${esc(val||'')}</textarea>
     </div>`;
   }
 
@@ -4030,9 +4047,10 @@ function renderDetailTab() {
     const count = emails.filter(Boolean).length;
     const rows = emails.map((em,i)=>`
       <div class="info-row" style="align-items:center;gap:6px;">
-        <input class="editable-field" style="flex:1;text-align:left;" value="${esc(em)}" data-apemail="${field}" ${apIn}
+        <textarea class="editable-field grow-field" style="flex:1;text-align:left;" data-apemail="${field}" ${apIn} rows="1" spellcheck="false"
+          oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
           onchange="apEmailEdit(${idx},'${field}',${i},this.value)" title="${apTitle}"
-          placeholder="name@customer.com">
+          placeholder="name@customer.com">${esc(em)}</textarea>
         <button type="button" title="Remove this email"
           onclick="apEmailRemove(${idx},'${field}',${i})"
           style="border:none;background:none;color:var(--red);cursor:pointer;font-size:0.95rem;line-height:1;padding:0 2px;">✕</button>
@@ -4398,7 +4416,7 @@ function apEmailStore(idx, field, list, keepBlank) {
   switchTab(activeTab); // re-render the detail tab so rows update
   if(_main) _main.scrollTop=_sy; // keep view in place after re-render
   if(keepBlank){ // just added a blank slot — focus it for immediate typing
-    try{ const _ins=document.querySelectorAll('input[data-apemail="'+field+'"]');
+    try{ const _ins=document.querySelectorAll('[data-apemail="'+field+'"]');
       if(_ins.length) _ins[_ins.length-1].focus(); }catch(e){}
   }
 }
@@ -4407,7 +4425,7 @@ function apEmailAdd(idx, field) {
   const _main=document.getElementById('main'); const _sy=_main?_main.scrollTop:0;
   switchTab(activeTab);
   if(_main) _main.scrollTop=_sy;
-  try{ const _ins=document.querySelectorAll('input[data-apemail="'+field+'"]');
+  try{ const _ins=document.querySelectorAll('[data-apemail="'+field+'"]');
     if(_ins.length) _ins[_ins.length-1].focus(); }catch(e){}
 }
 function apEmailEdit(idx, field, i, val) {
