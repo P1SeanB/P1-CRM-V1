@@ -2911,6 +2911,7 @@ function saveNewAgreement() {
 
   // Select the first new site
   selectedIdx = firstIdx;
+  detailsLocked = true; apLocked = true;   // new agreement opens locked
   renderDetail(DB[firstIdx]);
 
   closeNewAgreement();
@@ -3164,6 +3165,8 @@ function selectAccount(idx) {
   emailChecked.clear();
   invoiceHistoryExpanded = false;
   unlockedInvoiceGroups.clear();
+  detailsLocked = true;   // always start a freshly-opened agreement locked
+  apLocked = true;        // (top panels + A/P/Services/Billing Notes)
   renderList();
   renderDetail(DB[idx]);
 }
