@@ -226,6 +226,15 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray1);
 .editable-field { border: none; background: transparent; font-size: 0.79rem; font-weight: 500; color: var(--text); text-align: right; width: 100%; font-family: inherit; border-bottom: 1px dashed var(--gray3); outline: none; cursor: text; }
 .editable-field:focus { border-bottom: 1.5px solid var(--blue); background: #f0f5ff; }
 
+/* Account Details — locked top panels: fields display as plain read-only values */
+.cards-row.locked .editable-field { border-bottom-color: transparent; cursor: default; pointer-events: none; }
+.cards-row.locked .editable-field:focus { background: transparent; border-bottom: 1px solid transparent; }
+.cards-row.locked select.editable-field { -webkit-appearance: none; -moz-appearance: none; appearance: none; opacity: 1; color: var(--text); }
+.cards-row.locked input, .cards-row.locked select, .cards-row.locked textarea, .cards-row.locked button { pointer-events: none; }
+.details-lock-bar { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+.details-lock-note { font-size:0.74rem; line-height:1.4; }
+.details-lock-btn { border-radius:6px; cursor:pointer; font-size:0.74rem; font-weight:700; padding:5px 12px; white-space:nowrap; }
+
 .services-card { background: var(--white); border-radius: 8px; padding: 13px 15px; border: 1px solid var(--gray3); margin-bottom: 14px; }
 .services-card h3 { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.7px; color: var(--gray4); margin-bottom: 9px; }
 .services-grid { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -554,6 +563,7 @@ let lineItems = [];
 let activeTab = 'invoices';
 let renewalCustomRows = [];
 let servicesEditMode = false;   // Services Included card: locked (false) vs editable (true)
+let detailsLocked = true;       // Account Details top panels: locked (read-only) vs unlocked (editable)
 let unlockedInvoiceGroups = new Set();   // groupKeys (agr::groupKey) unlocked for one-off amount editing
 
 const SERVICES = [
@@ -790,8 +800,9 @@ function _siteAddrCard(r, idx){
       list+'</div>';
   }
   function _ef(field,label,val){
+    var lk = (typeof detailsLocked!=='undefined' && detailsLocked) ? 'readonly tabindex="-1"' : '';
     return '<div class="info-row"><span class="info-label">'+label+'</span>'+
-      '<input class="editable-field" value="'+esc(val||'')+'" '+
+      '<input class="editable-field" value="'+esc(val||'')+'" '+lk+' '+
       'onchange="updateField('+idx+',\''+field+'\',this.value)" title="Click to edit"></div>';
   }
   return '<div class="info-card">'+head+'(click to edit)</span></h3>'+
@@ -800,7 +811,7 @@ function _siteAddrCard(r, idx){
 }
 
 // ── Authoritative last-billed invoice per agreement (overrides saved copy) V1.26 ──
-const LAST_INVOICE = {};
+const LAST_INVOICE = {"2": ["33412", "6/1/2026", "$310.00"], "3": ["33413", "6/1/2026", "$65.00"], "5": ["33414", "6/1/2026", "$225.00"], "6": ["33415", "6/1/2026", "$50.00"], "7": ["33409", "6/1/2026", "$1,140.00"], "8": ["33416", "6/1/2026", "$250.00"], "9": ["33417", "6/1/2026", "$50.00"], "10": ["33399", "6/1/2026", "$278.44"], "11": ["33418", "6/1/2026", "$235.00"], "12": ["33419", "6/1/2026", "$50.00"], "13": ["33420", "6/1/2026", "$323.00"], "14": ["33421", "6/1/2026", "$45.00"], "15": ["33422", "6/1/2026", "$60.00"], "16": ["33423", "6/1/2026", "$21.00"], "17": ["33424", "6/1/2026", "$45.00"], "18": ["33425", "6/1/2026", "$37.00"], "19": ["33426", "6/1/2026", "$21.00"], "20": ["31843", "10/1/2025", "$312.00"], "21": ["33427", "6/1/2026", "$26.50"], "22": ["33428", "6/1/2026", "$21.00"], "23": ["33429", "6/1/2026", "$21.00"], "24": ["33430", "6/1/2026", "$21.00"], "25": ["33431", "6/1/2026", "$21.00"], "26": ["33432", "6/1/2026", "$21.00"], "27": ["33433", "6/1/2026", "$21.00"], "28": ["26024", "1/1/2025", "$25.00"], "29": ["33434", "6/1/2026", "$21.00"], "30": ["33029", "4/1/2026", "$63.00"], "31": ["32902", "3/1/2026", "$48.00"], "32": ["33435", "6/1/2026", "$21.00"], "33": ["33436", "6/1/2026", "$21.00"], "34": ["33437", "6/1/2026", "$25.00"], "35": ["33438", "6/1/2026", "$26.00"], "36": ["30839", "7/1/2025", "$450.00"], "37": ["33439", "6/1/2026", "$132.00"], "38": ["30928", "8/1/2025", "$55.00"], "39": ["33440", "6/1/2026", "$30.00"], "40": ["33441", "6/1/2026", "$65.00"], "41": ["33442", "6/1/2026", "$180.00"], "42": ["33408", "6/1/2026", "$1,587.00"], "43": ["30840", "7/22/2025", "$525.00"], "44": ["33443", "6/1/2026", "$80.00"], "45": ["33444", "6/1/2026", "$26.00"], "46": ["33445", "6/1/2026", "$40.00"], "47": ["33446", "6/1/2026", "$704.00"], "48": ["33447", "6/1/2026", "$65.00"], "49": ["33448", "6/1/2026", "$285.00"], "51": ["33449", "6/1/2026", "$45.00"], "52": ["33450", "6/1/2026", "$26.00"], "53": ["33241", "5/1/2026", "$85.00"], "54": ["25508", "1/1/2025", "$1,340.00"], "55": ["33451", "6/1/2026", "$65.00"], "57": ["33452", "6/1/2026", "$132.00"], "58": ["33453", "6/1/2026", "$243.00"], "59": ["33454", "6/1/2026", "$75.00"], "60": ["33455", "6/1/2026", "$55.00"], "63": ["33456", "6/1/2026", "$30.00"], "64": ["33457", "6/1/2026", "$38.00"], "65": ["33458", "6/1/2026", "$333.00"], "66": ["33459", "6/1/2026", "$225.00"], "67": ["33460", "6/1/2026", "$36.00"], "69": ["33461", "6/1/2026", "$40.00"], "70": ["33462", "6/1/2026", "$50.00"], "71": ["33398", "6/1/2026", "$55.00"], "72": ["33463", "6/1/2026", "$206.00"], "73": ["33244", "5/1/2026", "$26.00"], "74": ["33245", "5/1/2026", "$26.00"], "75": ["33324", "5/1/2026", "$763.50"], "76": ["33280", "5/1/2026", "$65.00"], "82": ["33325", "5/1/2026", "$549.00"], "83": ["33217", "5/1/2026", "$30.00"], "84": ["33281", "5/1/2026", "$165.00"], "85": ["33246", "5/1/2026", "$30.00"], "86": ["33326", "5/1/2026", "$1,495.00"], "87": ["33247", "5/1/2026", "$56.00"], "88": ["33282", "5/1/2026", "$195.00"], "89": ["33410", "6/1/2026", "$330.00"], "90": ["33328", "5/1/2026", "$220.00"], "91": ["33411", "6/1/2026", "$75.00"], "92": ["33330", "5/1/2026", "$55.00"], "93": ["33248", "5/1/2026", "$148.00"], "94": ["33331", "5/1/2026", "$73.00"], "95": ["33249", "5/1/2026", "$29.00"], "96": ["33332", "5/1/2026", "$4,284.00"], "97": ["33333", "5/1/2026", "$544.00"], "98": ["33334", "5/1/2026", "$2,439.00"], "99": ["33335", "5/1/2026", "$86.00"], "100": ["33400", "6/1/2026", "$65.00"], "101": ["33401", "6/1/2026", "$145.00"], "103": ["33338", "5/15/2026", "$2,680.20"], "104": ["33402", "6/1/2026", "$58.00"], "105": ["33403", "6/1/2026", "$53.47"], "106": ["33404", "6/1/2026", "$355.00"], "107": ["33405", "6/1/2026", "$57.00"], "108": ["33406", "6/1/2026", "$57.00"], "109": ["33407", "6/1/2026", "$20.00"], "110": ["33293", "5/1/2026", "$57.00"], "111": ["33294", "5/1/2026", "$1,156.00"], "112": ["33295", "5/1/2026", "$65.00"], "113": ["33296", "5/1/2026", "$235.00"], "114": ["33298", "5/1/2026", "$58.00"], "115": ["33297", "5/1/2026", "$77.00"], "117": ["33250", "5/1/2026", "$30.00"], "118": ["33299", "5/1/2026", "$79.00"], "119": ["33165", "4/1/2026", "$660.00"], "120": ["31248", "4/1/2025", "$384.00"], "122": ["33300", "5/1/2026", "$243.00"], "124": ["33301", "5/1/2026", "$86.00"], "125": ["32510", "1/1/2026", "$4,557.73"], "126": ["33302", "5/1/2026", "$774.75"], "127": ["33303", "5/1/2026", "$65.00"], "128": ["32511", "1/1/2026", "$1,603.50"], "129": ["33166", "4/1/2026", "$810.00"], "130": ["33304", "5/1/2026", "$79.00"], "131": ["33305", "5/1/2026", "$267.38"], "132": ["33306", "5/1/2026", "$267.38"], "133": ["33251", "5/1/2026", "$35.00"], "134": ["33258", "5/1/2026", "$375.00"], "135": ["33252", "5/1/2026", "$40.00"], "136": ["33307", "5/1/2026", "$267.38"], "137": ["33253", "5/1/2026", "$35.00"], "138": ["33308", "5/1/2026", "$246.00"], "139": ["32370", "12/1/2025", "$178.00"], "140": ["33309", "5/1/2026", "$85.00"], "141": ["33310", "5/1/2026", "$241.00"], "142": ["32520", "1/1/2026", "$1,578.00"], "144": ["33259", "5/1/2026", "$263.00"], "145": ["33311", "5/1/2026", "$40.00"], "146": ["33312", "5/1/2026", "$257.00"], "147": ["33314", "5/1/2026", "$4,807.60"], "149": ["33315", "5/1/2026", "$61,416.08"], "150": ["33316", "5/1/2026", "$116.00"], "151": ["33317", "5/1/2026", "$160.00"], "152": ["33319", "5/1/2026", "$1,174.52"], "154": ["33320", "5/1/2026", "$108.00"], "162": ["33387", "5/1/2026", "$57,635.00"]};
 function applyLastInvoice(){
   try{
     DB.forEach(function(r){
@@ -967,7 +978,1480 @@ async function init() {
   if (!(await ensureSignedIn())) return;
   installIdleLogout();   // auto sign-out after 2h of inactivity
   await loadAllFromCloud();
+  // If the generated history has already been baked into the cloud, the cloud is
+  // the single source of truth — skip every generator below so deletes and edits
+  // persist instead of being regenerated on each load.
+  if (await getMeta('seeded_committed') === 'true') { renderList(); return; }
+  // Seed invoiceDB from existing Last Invoice# data
+  DB.forEach((r, idx) => {
+    const key = makeKey(r);
+    if (!invoiceDB[key]) invoiceDB[key] = [];
+    // Seed from last invoice if not already present
+    if (r['Last Invoice#'] && r['Last Invoice Date'] && r['Last Invoice Amount']) {
+      const existing = invoiceDB[key].find(i => String(i.invNum) === String(r['Last Invoice#']));
+      if (!existing) {
+        invoiceDB[key].push({
+          invNum: String(r['Last Invoice#']),
+          date: r['Last Invoice Date'],
+          amount: parseFloat((r['Last Invoice Amount']||'').replace(/[$,]/g,''))||0,
+          period: 'Monthly Service',
+          due: r['Payment Terms']||'Net 30 Days',
+          notes: '',
+          billed: true,
+          lineItems: [{desc: r['Account Name']||'Service', qty:1, price: parseFloat((r['Last Invoice Amount']||'').replace(/[$,]/g,''))||0}]
+        });
+      }
+    }
+    // ── Hard-coded DB field patches for known agreements ──
+
+    // Agr 136: HUSPRF Piercy LP (6480 Hellyer / 550 Bldg2) — $267.38/mo, 1/1/2026–12/31/2028
+    if (r['Agreement#'] == 136) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = '101 California Street, Suite 1900';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'San Francisco, CA 94111';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '1/1/2026';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '12/31/2028';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33307; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$267.38'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv136 = [
+        {num:'32517', date:'1/1/2026',  desc:'Agmt 136 January 2025 service and monitor billing'},
+        {num:'32696', date:'2/1/2026',  desc:'Agmt 136 February 2026 service and monitor billing'},
+        {num:'32948', date:'3/1/2026',  desc:'Agmt 136 Service and Monitor Billing March 2026'},
+        {num:'33149', date:'4/1/2026',  desc:'Agmt 136 April service and monitor billing 2026'},
+        {num:'33307', date:'5/1/2026',  desc:'Agmt 136 Service and Monitor Billing May 2026'},
+      ];
+      inv136.forEach(i => {
+        const already = invoiceDB[key].find(inv => String(inv.invNum) === i.num);
+        if (!already) {
+          invoiceDB[key].push({
+            invNum: i.num, date: i.date, amount: 267.38,
+            period: `Monthly Service — ${i.date}`,
+            due: 'Net 30 Days', notes: i.desc, billed: true,
+            lineItems: [{desc: 'Hines - 6480 Hellyer (550 Bldg2) - FA Monitoring & Inspection', qty:1, price:267.38}]
+          });
+        }
+      });
+    }
+
+    // Agr 132: HUSPRF Investor SPV I LP (550 Piercy FA) — $267.38/mo, 12/1/2025–11/30/2028
+    if (r['Agreement#'] == 132) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = '101 California Street, Suite 1900';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'San Francisco, CA 94111';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '12/1/2025';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '11/30/2028';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33306; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$267.38'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv132 = [
+        {num:'32339', date:'12/1/2025', desc:'Agmt 132'},
+        {num:'32515', date:'1/1/2026',  desc:'Agmt 132 January 2025 service and monitor billing'},
+        {num:'32693', date:'2/1/2026',  desc:'Agmt 132 February 2026 service and monitor billing'},
+        {num:'32946', date:'3/1/2026',  desc:'Agmt 132 Service and Monitor Billing March 2026'},
+        {num:'33148', date:'4/1/2026',  desc:'Agmt 132 April service and monitor billing 2026'},
+        {num:'33306', date:'5/1/2026',  desc:'Agmt 132 Service and Monitor Billing May 2026'},
+      ];
+      inv132.forEach(i => {
+        const already = invoiceDB[key].find(inv => String(inv.invNum) === i.num);
+        if (!already) {
+          invoiceDB[key].push({
+            invNum: i.num, date: i.date, amount: 267.38,
+            period: `Monthly Service — ${i.date}`,
+            due: 'Net 30 Days', notes: i.desc, billed: true,
+            lineItems: [{desc: 'Hines 550 Piercy - FA Monitoring & Inspections', qty:1, price:267.38}]
+          });
+        }
+      });
+    }
+
+    // Agr 131: HUSPRF Piercy LP (650 Piercy FA) — $267.38/mo, 12/1/2025–11/30/2028
+    if (r['Agreement#'] == 131) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = '101 California Street, Suite 1900';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'San Francisco, CA 94111';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '12/1/2025';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '11/30/2028';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33305; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$267.38'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv131 = [
+        {num:'32342', date:'12/1/2025', desc:'Agmt 131 December 2025'},
+        {num:'32514', date:'1/1/2026',  desc:'Agmt 131 January 2026 service and monitor billing'},
+        {num:'32692', date:'2/1/2026',  desc:'Agmt 131 February 2026 service and monitor billing'},
+        {num:'32945', date:'3/1/2026',  desc:'Agmt 131 Service and Monitor Billing March 2026'},
+        {num:'33147', date:'4/1/2026',  desc:'agmt 131 April service and monitor billing 2026'},
+        {num:'33305', date:'5/1/2026',  desc:'Agmt 131 Service and Monitor Billing May 2026'},
+      ];
+      inv131.forEach(i => {
+        const already = invoiceDB[key].find(inv => String(inv.invNum) === i.num);
+        if (!already) {
+          invoiceDB[key].push({
+            invNum: i.num, date: i.date, amount: 267.38,
+            period: `Monthly Service — ${i.date}`,
+            due: 'Net 30 Days', notes: i.desc, billed: true,
+            lineItems: [{desc: 'Hines 650 Piercy - FA Monitoring & Inspections', qty:1, price:267.38}]
+          });
+        }
+      });
+    }
+
+    // Agr 118: Palo Alto History Museum — $79/mo, 3-year agreement 3/1/2025–2/29/2028
+    if (r['Agreement#'] == 118) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = 'PO Box 676';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'Palo Alto, CA 94302';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '3/1/2025';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '2/29/2028';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33299; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$79.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      // Invoice 32941 — 3/1/2026, billed
+      const inv118_32941 = invoiceDB[key].find(inv => String(inv.invNum) === '32941');
+      if (!inv118_32941) {
+        invoiceDB[key].push({
+          invNum: '32941', date: '3/1/2026', amount: 79.00,
+          period: 'Monthly Service — March 2026',
+          due: 'Net 30 Days', notes: 'Agmt 118 Service and Monitor Billing March 2026', billed: true,
+          lineItems: [{desc: 'Palo Alto History Museum - Intrusion Monitoring', qty:1, price:79.00}]
+        });
+      }
+      // Invoice 33142 — 4/1/2026, billed
+      const inv118_33142 = invoiceDB[key].find(inv => String(inv.invNum) === '33142');
+      if (!inv118_33142) {
+        invoiceDB[key].push({
+          invNum: '33142', date: '4/1/2026', amount: 79.00,
+          period: 'Monthly Service — April 2026',
+          due: 'Net 30 Days', notes: 'Agmt 118 April service and monitor billing 2026', billed: true,
+          lineItems: [{desc: 'Palo Alto History Museum - Intrusion Monitoring', qty:1, price:79.00}]
+        });
+      }
+      // Invoice 33299 — 5/1/2026, billed
+      const inv118_33299 = invoiceDB[key].find(inv => String(inv.invNum) === '33299');
+      if (!inv118_33299) {
+        invoiceDB[key].push({
+          invNum: '33299', date: '5/1/2026', amount: 79.00,
+          period: 'Monthly Service — May 2026',
+          due: 'Net 30 Days', notes: 'Agmt 118 Service and Monitor Billing May 2026', billed: true,
+          lineItems: [{desc: 'Palo Alto History Museum - Intrusion Monitoring', qty:1, price:79.00}]
+        });
+      }
+    }
+
+    // Agr 119: Impossible Foods — $660/year billed in April, active through 3/31/2027
+    if (r['Agreement#'] == 119) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = '400 Saginaw Drive';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'Redwood City, CA 94063';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '4/1/2025';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '3/31/2027';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 31247; r['Last Invoice Date'] = '4/1/2025'; r['Last Invoice Amount'] = '$660.00'; }
+      if (!r['Other Billing Notes'] || r['Other Billing Notes'] === '') r['Other Billing Notes'] = 'Annual bill due in April each year. $660/year. Agreement year 4/1/2025–3/31/2026 invoiced as #31247. Current year 4/1/2026–3/31/2027 pending. Renews 4/1/2027.';
+      // Invoice 31247 — 4/1/2025, billed
+      const inv119_2025 = invoiceDB[key].find(inv => String(inv.invNum) === '31247');
+      if (!inv119_2025) {
+        invoiceDB[key].push({
+          invNum: '31247', date: '4/1/2025', amount: 660.00,
+          period: 'Annual Service — 4/1/2025 to 3/31/2026',
+          due: 'Net 30 Days', notes: '', billed: true,
+          lineItems: [{desc: 'Impossible Foods 2490 Middlefield - Intrusion Monitoring', qty:1, price:660.00}]
+        });
+      }
+      // April 2026 — current year, pending (no invoice # yet)
+      const inv119_2026 = invoiceDB[key].find(inv => inv.date === '4/1/2026');
+      if (!inv119_2026) {
+        invoiceDB[key].push({
+          invNum: '', date: '4/1/2026', amount: 660.00,
+          period: 'Annual Service — 4/1/2026 to 3/31/2027',
+          due: 'Net 30 Days', notes: '', billed: false,
+          freqSeed: true,
+          lineItems: [{desc: 'Impossible Foods 2490 Middlefield - Intrusion Monitoring', qty:1, price:660.00}]
+        });
+      }
+      // April 2027 — renewal year, scheduled
+      const inv119_2027 = invoiceDB[key].find(inv => inv.date === '4/1/2027');
+      if (!inv119_2027) {
+        invoiceDB[key].push({
+          invNum: '', date: '4/1/2027', amount: 660.00,
+          period: 'Annual Service — 4/1/2027 to 3/31/2028',
+          due: 'Net 30 Days', notes: 'Renewal year — confirm agreement renewal before sending.',
+          billed: false, freqSeed: true,
+          lineItems: [{desc: 'Impossible Foods 2490 Middlefield - Intrusion Monitoring', qty:1, price:660.00}]
+        });
+      }
+    }
+
+    // Agr 162: City Center Bishop Ranch — address, dates, PO, payment terms from Invoice 33387
+    if (r['Agreement#'] == 162) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = '6000 Bollinger Canyon Road';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'San Ramon, CA 94583';
+      if (!r['Customer PO'] || r['Customer PO'] === '') r['Customer PO'] = 'SWO 11014';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '05/01/2026';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '04/30/2027';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33387; r['Last Invoice Date'] = '05/01/2026'; r['Last Invoice Amount'] = '$57,635.00'; }
+      // Seed Invoice 33387 as billed
+      const already162 = invoiceDB[key].find(inv => String(inv.invNum) === '33387');
+      if (!already162) {
+        invoiceDB[key].push({
+          invNum: '33387',
+          date: '5/1/2026',
+          amount: 57635.00,
+          period: 'Scheduled — 5/1/2026',
+          due: 'Net 30 Days',
+          notes: '',
+          billed: true,
+          lineItems: [{desc: 'City Center Bishop Ranch - FA Inspection Services', qty:1, price:57635.00}]
+        });
+      }
+    }
+
+    // ── Hard-coded known past invoices not in Last Invoice# fields ──
+    // Agr 9: Corefact San Leandro Security — $50/mo, invoices 10/1/2024–2/1/2026, gap 3-4/2026, new term 5/1/2026–7/31/2027
+    if (r['Agreement#'] == 9) {
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '1/1/2026') r['Agreement Effective Date'] = '5/1/2026';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '12/31/2026') r['Agreement Expiration Date'] = '7/31/2027';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 32753; r['Last Invoice Date'] = '2/1/2026'; r['Last Invoice Amount'] = '$50.00'; }
+      const inv9 = [
+        {num:'23220',date:'10/1/2024'},{num:'24392',date:'11/1/2024'},{num:'24909',date:'12/1/2024'},
+        {num:'25539',date:'1/1/2025'},{num:'26736',date:'2/1/2025'},{num:'27548',date:'3/1/2025'},
+        {num:'27868',date:'4/1/2025'},{num:'28740',date:'5/1/2025'},{num:'29545',date:'6/1/2025'},
+        {num:'30527',date:'7/1/2025'},{num:'30956',date:'8/1/2025'},{num:'31526',date:'9/1/2025'},
+        {num:'31871',date:'10/1/2025'},{num:'32078',date:'11/1/2025'},{num:'32307',date:'12/1/2025'},
+        {num:'32553',date:'1/1/2026'},{num:'32753',date:'2/1/2026'},
+      ];
+      inv9.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:50.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Corefact - San Leandro - Security Alarm Monitoring',qty:1,price:50.00}] });
+        }
+      });
+      // Remove any freq-seeded entries for 3/1/2026 and 4/1/2026 — gap months, not billed
+      invoiceDB[key] = invoiceDB[key].filter(inv =>
+        !(inv.freqSeed && (inv.date === '3/1/2026' || inv.date === '4/1/2026'))
+      );
+      // Seed pending invoices starting 5/1/2026 through 7/31/2027 if not already present
+      const newTermDates = [
+        '5/1/2026','6/1/2026','7/1/2026','8/1/2026','9/1/2026','10/1/2026',
+        '11/1/2026','12/1/2026','1/1/2027','2/1/2027','3/1/2027','4/1/2027',
+        '5/1/2027','6/1/2027','7/1/2027'
+      ];
+      newTermDates.forEach(date => {
+        if (!invoiceDB[key].find(inv => inv.date === date && Math.abs(inv.amount - 50) < 0.01)) {
+          invoiceDB[key].push({ invNum:'', date, amount:50.00,
+            period:'Monthly Service', due:'Net 30 Days', notes:'Revision 3 — new term 5/1/2026',
+            billed:false, freqSeed:true,
+            lineItems:[{desc:'Corefact - San Leandro - Security Alarm Monitoring',qty:1,price:50.00}] });
+        }
+      });
+    }
+
+    // Agr 10: Pinole Point Commerce Center FA — $278.44/mo, current term 2/1/2026–1/31/2027
+    if (r['Agreement#'] == 10) {
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '1/1/2026') r['Agreement Effective Date'] = '2/1/2026';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '12/31/2026') r['Agreement Expiration Date'] = '1/31/2027';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33263; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$278.44'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv10 = [
+        {num:'23172',date:'10/1/2024'},{num:'24313',date:'11/1/2024'},{num:'24822',date:'12/1/2024'},
+        {num:'26009',date:'1/1/2025'},{num:'26569',date:'2/1/2025'},{num:'27385',date:'3/1/2025'},
+        {num:'27685',date:'4/1/2025'},{num:'28595',date:'5/1/2025'},{num:'29411',date:'6/1/2025'},
+        {num:'30461',date:'7/1/2025'},{num:'30957',date:'8/1/2025'},{num:'31493',date:'9/1/2025'},
+        {num:'31807',date:'10/1/2025'},{num:'32016',date:'11/1/2025'},{num:'32318',date:'12/1/2025'},
+        {num:'32446',date:'1/1/2026'},{num:'32672',date:'2/1/2026'},{num:'32897',date:'3/1/2026'},
+        {num:'33085',date:'4/1/2026'},{num:'33263',date:'5/1/2026'},
+      ];
+      inv10.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:278.44,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Pinole Point Commerce Center - FA Monitoring & Inspections',qty:1,price:278.44}] });
+        }
+      });
+    }
+
+    // Agr 13: SMW Local 104 SJ FA — $323/mo, 6/1/2025–5/31/2027
+    if (r['Agreement#'] == 13) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33266; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$323.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv13 = [
+        {num:'23175',date:'10/1/2024'},{num:'24317',date:'11/1/2024'},{num:'24833',date:'12/1/2024'},
+        {num:'25502',date:'1/1/2025'},{num:'26580',date:'2/1/2025'},{num:'27447',date:'3/1/2025'},
+        {num:'27705',date:'4/1/2025'},{num:'28606',date:'5/1/2025'},{num:'29519',date:'6/1/2025'},
+        {num:'30472',date:'7/1/2025'},{num:'31024',date:'8/1/2025'},{num:'31491',date:'9/1/2025'},
+        {num:'31814',date:'10/1/2025'},{num:'32029',date:'11/1/2025'},{num:'32321',date:'12/1/2025'},
+        {num:'32461',date:'1/1/2026'},{num:'32688',date:'2/1/2026'},{num:'32900',date:'3/1/2026'},
+        {num:'33163',date:'4/1/2026'},{num:'33266',date:'5/1/2026'},
+      ];
+      inv13.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:323.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'SMW Local 104 - SJ FA',qty:1,price:323.00}] });
+        }
+      });
+    }
+
+    // Agr 14: SMW Local 104 SJ Intrusion — $45/mo, 2/1/2022–1/31/2027
+    if (r['Agreement#'] == 14) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33267; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$45.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      r['Last Invoice#'] = r['Last Invoice#'] || 33267;
+      r['Last Invoice Date'] = '5/1/2026'; // force so freq seeder starts at 6/1/2026
+      r['Last Invoice Amount'] = r['Last Invoice Amount'] || '$45.00';
+      // Purge all unbilled entries — global dedup will handle months with billed invoices
+      invoiceDB[key] = (invoiceDB[key]||[]).filter(inv => inv.billed && inv.invNum);
+      const inv14 = [
+        {num:'23176',date:'10/1/2024'},{num:'24318',date:'11/1/2024'},{num:'24834',date:'12/1/2024'},
+        {num:'25503',date:'1/1/2025'},{num:'26581',date:'2/1/2025'},{num:'27471',date:'3/1/2025'},
+        {num:'27706',date:'4/1/2025'},{num:'28607',date:'5/1/2025'},{num:'29520',date:'6/1/2025'},
+        {num:'30473',date:'7/1/2025'},{num:'31026',date:'8/1/2025'},{num:'31492',date:'9/1/2025'},
+        {num:'31815',date:'10/1/2025'},{num:'32030',date:'11/1/2025'},{num:'32322',date:'12/1/2025'},
+        {num:'32462',date:'1/1/2026'},{num:'32698',date:'2/1/2026'},{num:'32901',date:'3/1/2026'},
+        {num:'33094',date:'4/1/2026'},{num:'33267',date:'5/1/2026'},
+      ];
+      inv14.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:45.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'SMW Local 104 - SJ Intrusion',qty:1,price:45.00}] });
+        }
+      });
+    }
+
+    // Agr 15: Seth Rosenberg Residence — $60/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 15) {
+      r['Agreement Effective Date'] = '1/1/2026';
+      r['Agreement Expiration Date'] = '12/31/2026';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33218; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$60.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      // Nuclear option: wipe everything and rebuild from scratch every load
+      invoiceDB[key] = [];
+      const inv15billed = [
+        {num:'23177',date:'10/1/2024'},{num:'24320',date:'11/1/2024'},{num:'24835',date:'12/1/2024'},
+        {num:'26012',date:'1/1/2025'},{num:'26589',date:'2/1/2025'},{num:'27472',date:'3/1/2025'},
+        {num:'27708',date:'4/1/2025'},{num:'28620',date:'5/1/2025'},{num:'29382',date:'6/1/2025'},
+        {num:'30386',date:'7/1/2025'},{num:'30912',date:'8/1/2025'},{num:'31399',date:'9/1/2025'},
+        {num:'31773',date:'10/1/2025'},{num:'31981',date:'11/1/2025'},{num:'32263',date:'12/1/2025'},
+        {num:'32568',date:'1/1/2026'},{num:'32590',date:'2/1/2026'},{num:'32851',date:'3/1/2026'},
+        {num:'33032',date:'4/1/2026'},{num:'33218',date:'5/1/2026'},
+      ];
+      inv15billed.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:60.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Seth Rosenberg Residence - Intrusion Monitoring',qty:1,price:60.00}] });
+        }
+      });
+      // Seed pending months 6/1/2026–12/1/2026
+      ['6/1/2026','7/1/2026','8/1/2026','9/1/2026','10/1/2026','11/1/2026','12/1/2026'].forEach(date => {
+        const d = parseDateStr(date);
+        const exists = invoiceDB[key].find(inv => {
+          const id = parseDateStr(inv.date);
+          return id && id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear() && Math.abs(inv.amount-60)<0.01;
+        });
+        if (!exists) invoiceDB[key].push({ invNum:'', date, amount:60.00,
+          period:'Monthly Service', due:'Net 30 Days', notes:'', billed:false, freqSeed:true,
+          lineItems:[{desc:'Seth Rosenberg Residence - Intrusion Monitoring',qty:1,price:60.00}] });
+      });
+    }
+    // Agr 44: Rob McGinnis Residences — $40/mo each, one invoice covers both accounts
+    if (r['Agreement#'] == 44) {
+      r['Last Invoice Date'] = '5/1/2026';
+      r['Monthly Billing Charge'] = '$40.00';
+      if (r['Central Station Account#'] === 'E36685') {
+        r['Billing Address'] = r['Billing Address'] || '260 Castle Drive';
+        r['City State Zip'] = r['City State Zip'] || 'Santa Cruz, CA 95056';
+        r['Agreement Effective Date'] = r['Agreement Effective Date'] || '1/1/2026';
+        r['Agreement Expiration Date'] = r['Agreement Expiration Date'] || '12/31/2026';
+        r['Payment Terms'] = r['Payment Terms'] || 'Net 45 Days';
+      }
+      const inv44nums = [
+        {num:'23211',date:'10/1/2024'},{num:'24347',date:'11/1/2024'},{num:'24863',date:'12/1/2024'},
+        {num:'26039',date:'1/1/2025'},{num:'26613',date:'2/1/2025'},{num:'27504',date:'3/1/2025'},
+        {num:'27818',date:'4/1/2025'},{num:'28645',date:'5/1/2025'},{num:'29396',date:'6/1/2025'},
+        {num:'30404',date:'7/1/2025'},{num:'30930',date:'8/1/2025'},{num:'31448',date:'9/1/2025'},
+        {num:'31791',date:'10/1/2025'},{num:'31998',date:'11/1/2025'},{num:'32281',date:'12/1/2025'},
+        {num:'32486',date:'1/1/2026'},{num:'32629',date:'2/1/2026'},{num:'32868',date:'3/1/2026'},
+        {num:'33057',date:'4/1/2026'},{num:'33235',date:'5/1/2026'},
+      ];
+      const acctLabel = r['Central Station Account#'] === 'E36685'
+        ? 'Rob McGinnis - Hilltop Home' : 'Rob McGinnis - Lower Home';
+      inv44nums.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:40.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days',
+            notes:'Shared invoice covers both Hilltop and Lower Home', billed:true,
+            lineItems:[{desc:acctLabel,qty:1,price:40.00}] });
+        }
+      });
+    }
+
+    // Agr 45: Steve Geuss Residence (Sean Bithell) — $26/mo, 1/1/2025–12/31/2028
+    if (r['Agreement#'] == 45) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv45 = [
+        {num:'23212',date:'10/1/2024'},{num:'24348',date:'11/1/2024'},{num:'24864',date:'12/1/2024'},
+        {num:'26040',date:'1/1/2025'},{num:'26614',date:'2/1/2025'},{num:'27505',date:'3/1/2025'},
+        {num:'27819',date:'4/1/2025'},{num:'28646',date:'5/1/2025'},{num:'29397',date:'6/1/2025'},
+        {num:'31244',date:'7/1/2025'},{num:'30931',date:'8/1/2025'},{num:'31449',date:'9/1/2025'},
+        {num:'31792',date:'10/1/2025'},{num:'31999',date:'11/1/2025'},{num:'32282',date:'12/1/2025'},
+        {num:'32487',date:'1/1/2026'},{num:'32635',date:'2/1/2026'},{num:'32869',date:'3/1/2026'},
+        {num:'33058',date:'4/1/2026'},{num:'33236',date:'5/1/2026'},
+      ];
+      inv45.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:26.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'Steve Geuss Residence - Intrusion Monitoring',qty:1,price:26.00}] });
+        }
+      });
+    }
+
+    // Agr 46: The Guild Theatre — $40/mo, 4/1/2022–3/31/2027
+    if (r['Agreement#'] == 46) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv46 = [
+        {num:'23213',date:'10/1/2024'},{num:'24349',date:'11/1/2024'},{num:'24865',date:'12/1/2024'},
+        {num:'25507',date:'1/1/2025'},{num:'26628',date:'2/1/2025'},{num:'27506',date:'3/1/2025'},
+        {num:'27823',date:'4/1/2025'},{num:'28647',date:'5/1/2025'},{num:'29515',date:'6/1/2025'},
+        {num:'30499',date:'7/1/2025'},{num:'31031',date:'8/1/2025'},{num:'31520',date:'9/1/2025'},
+        {num:'31849',date:'10/1/2025'},{num:'32055',date:'11/1/2025'},{num:'32347',date:'12/1/2025'},
+        {num:'32534',date:'1/1/2026'},{num:'32724',date:'2/1/2026'},{num:'32906',date:'3/1/2026'},
+        {num:'33098',date:'4/1/2026'},{num:'33271',date:'5/1/2026'},
+      ];
+      inv46.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:40.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'The Guild Theatre - Intrusion Monitoring',qty:1,price:40.00}] });
+        }
+      });
+    }
+
+    // Agr 43: Longfellow 1800 Embarcadero Access Hosting — Terminated 8/15/2025
+    if (r['Agreement#'] == 43) {
+      r['Agreement Status'] = 'Terminated';
+      r['Agreement Expiration Date'] = '8/15/2025';
+      r['Last Invoice Date'] = '4/1/2025';
+      const inv43 = [
+        {num:'23210', date:'10/1/2024', amount:525.00,  desc:'Billing 1 of 1 — Longfellow 1800 Embarcadero Access Hosting'},
+        {num:'30840', date:'7/22/2025', amount:262.50,  desc:'Adjustment — Longfellow 1800 Embarcadero Access Hosting'},
+        {num:'26038', date:'1/1/2025',  amount:525.00,  desc:'Billing 1 of 2 — Longfellow 1800 Embarcadero Access Hosting'},
+        {num:'27817', date:'4/1/2025',  amount:525.00,  desc:'Billing 2 of 2 — Longfellow 1800 Embarcadero Access Hosting'},
+      ];
+      inv43.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:i.amount,
+            period:i.desc, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:i.desc, qty:1, price:i.amount}] });
+        }
+      });
+      invoiceDB[key] = invoiceDB[key].filter(inv => inv.billed && inv.invNum);
+    }
+
+    // Agr 39: Amoreena Perez Residence — $30/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 39) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv39 = [
+        {num:'23204',date:'10/1/2024'},{num:'24343',date:'11/1/2024'},{num:'24858',date:'12/1/2024'},
+        {num:'26035',date:'1/1/2025'},{num:'26610',date:'2/1/2025'},{num:'27500',date:'3/1/2025'},
+        {num:'27814',date:'4/1/2025'},{num:'28642',date:'5/1/2025'},{num:'29395',date:'6/1/2025'},
+        {num:'30403',date:'7/1/2025'},{num:'30929',date:'8/1/2025'},{num:'31447',date:'9/1/2025'},
+        {num:'31790',date:'10/1/2025'},{num:'31997',date:'11/1/2025'},{num:'32280',date:'12/1/2025'},
+        {num:'32485',date:'1/1/2026'},{num:'32628',date:'2/1/2026'},{num:'32867',date:'3/1/2026'},
+        {num:'33056',date:'4/1/2026'},{num:'33234',date:'5/1/2026'},
+      ];
+      inv39.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:30.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'Amoreena Perez Residence - Intrusion Monitoring',qty:1,price:30.00}] });
+        }
+      });
+    }
+
+    // Agr 40: Casey Family Programs — $65/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 40) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv40 = [
+        {num:'23206',date:'10/1/2024'},{num:'24345',date:'11/1/2024'},{num:'24860',date:'12/1/2024'},
+        {num:'26036',date:'1/1/2025'},{num:'26611',date:'2/1/2025'},{num:'27501',date:'3/1/2025'},
+        {num:'27815',date:'4/1/2025'},{num:'28643',date:'5/1/2025'},{num:'29481',date:'6/1/2025'},
+        {num:'30496',date:'7/1/2025'},{num:'31029',date:'8/1/2025'},{num:'31518',date:'9/1/2025'},
+        {num:'31847',date:'10/1/2025'},{num:'32049',date:'11/1/2025'},{num:'32341',date:'12/1/2025'},
+        {num:'32529',date:'1/1/2026'},{num:'32722',date:'2/1/2026'},{num:'32904',date:'3/1/2026'},
+        {num:'33096',date:'4/1/2026'},{num:'33269',date:'5/1/2026'},
+      ];
+      inv40.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:65.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Casey Family Programs - Intrusion Monitoring',qty:1,price:65.00}] });
+        }
+      });
+    }
+
+    // Agr 41: City of Milpitas FA — $180/mo, 1/1/2026–12/31/2026 (fix effective date)
+    if (r['Agreement#'] == 41) {
+      r['Agreement Effective Date'] = '1/1/2026';
+      r['Last Invoice Date'] = '5/1/2026';
+      // Purge all unbilled to prevent off-date duplicates
+      invoiceDB[key] = (invoiceDB[key]||[]).filter(inv => inv.billed && inv.invNum);
+      const inv41billed = [
+        {num:'23207',date:'10/1/2024'},{num:'24346',date:'11/1/2024'},{num:'24861',date:'12/1/2024'},
+        {num:'26037',date:'1/1/2025'},{num:'26612',date:'2/1/2025'},{num:'27502',date:'3/1/2025'},
+        {num:'27816',date:'4/1/2025'},{num:'28644',date:'5/1/2025'},{num:'29482',date:'6/1/2025'},
+        {num:'30497',date:'7/1/2025'},{num:'31030',date:'8/1/2025'},{num:'31515',date:'9/1/2025'},
+        {num:'31848',date:'10/1/2025'},{num:'32054',date:'11/1/2025'},{num:'32344',date:'12/1/2025'},
+        {num:'32533',date:'1/1/2026'},{num:'32723',date:'2/1/2026'},{num:'32960',date:'3/1/2026'},
+        {num:'33097',date:'4/1/2026'},{num:'33270',date:'5/1/2026'},
+      ];
+      inv41billed.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:180.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'City of Milpitas - Montague Expy Ovrcs - FA Monitoring & Inspections',qty:1,price:180.00}] });
+        }
+      });
+      // Seed pending 6/1/2026–12/1/2026
+      ['6/1/2026','7/1/2026','8/1/2026','9/1/2026','10/1/2026','11/1/2026','12/1/2026'].forEach(date => {
+        const d = parseDateStr(date);
+        const exists = invoiceDB[key].find(inv => {
+          const id = parseDateStr(inv.date);
+          return id && id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear() && Math.abs(inv.amount-180)<0.01;
+        });
+        if (!exists) invoiceDB[key].push({ invNum:'', date, amount:180.00,
+          period:'Monthly Service', due:'Net 30 Days', notes:'', billed:false, freqSeed:true,
+          lineItems:[{desc:'City of Milpitas - Montague Expy Ovrcs - FA Monitoring & Inspections',qty:1,price:180.00}] });
+      });
+    }
+
+    // Agr 42: Mercy Housing Hacienda Sprinkler — quarterly custom, current term 6/1/2026–5/31/2027
+    if (r['Agreement#'] == 42) {
+      r['Agreement Expiration Date'] = '5/31/2027';
+      r['Last Invoice Date'] = '3/1/2026';
+      // Purge and rebuild cleanly
+      invoiceDB[key] = (invoiceDB[key]||[]).filter(inv => !(inv.billed && inv.invNum) ? false : true);
+      invoiceDB[key] = [];
+      const inv42 = [
+        {num:'23209',date:'10/1/2024',amount:1587.00,desc:'Billing 1 of 4 — Sprinkler Inspection'},
+        {num:'23208',date:'10/1/2024',amount:397.00, desc:'Billing 2 of 4 — Sprinkler Inspection'},
+        {num:'24862',date:'12/1/2024',amount:397.00, desc:'Billing 3 of 4 — Sprinkler Inspection'},
+        {num:'27503',date:'3/1/2025', amount:397.00, desc:'Billing 4 of 4 — Sprinkler Inspection'},
+        {num:'29483',date:'6/1/2025', amount:1587.00,desc:'Billing 1 of 4 — Sprinkler Inspection'},
+        {num:'31519',date:'9/1/2025', amount:397.00, desc:'Billing 2 of 4 — Sprinkler Inspection'},
+        {num:'32345',date:'12/1/2025',amount:397.00, desc:'Billing 3 of 4 — Sprinkler Inspection'},
+        {num:'32905',date:'3/1/2026', amount:397.00, desc:'Billing 4 of 4 — Sprinkler Inspection'},
+      ];
+      inv42.forEach(i => {
+        invoiceDB[key].push({ invNum:i.num, date:i.date, amount:i.amount,
+          period:i.desc, due:'Net 45 Days', notes:'', billed:true,
+          lineItems:[{desc:'Mercy Housing - Hacienda - Sprinkler Inspections',qty:1,price:i.amount}] });
+      });
+    }
+
+    // Agr 37: 4th St Holding Berkeley FA — $132/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 37) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv37 = [
+        {num:'23202',date:'10/1/2024'},{num:'24341',date:'11/1/2024'},{num:'24856',date:'12/1/2024'},
+        {num:'26033',date:'1/1/2025'},{num:'26608',date:'2/1/2025'},{num:'27498',date:'3/1/2025'},
+        {num:'27810',date:'4/1/2025'},{num:'28640',date:'5/1/2025'},{num:'29480',date:'6/1/2025'},
+        {num:'30495',date:'7/1/2025'},{num:'31028',date:'8/1/2025'},{num:'31517',date:'9/1/2025'},
+        {num:'31846',date:'10/1/2025'},{num:'32052',date:'11/1/2025'},{num:'32323',date:'12/1/2025'},
+        {num:'32532',date:'1/1/2026'},{num:'32710',date:'2/1/2026'},{num:'32903',date:'3/1/2026'},
+        {num:'33095',date:'4/1/2026'},{num:'33268',date:'5/1/2026'},
+      ];
+      inv37.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:132.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'4th St Holding - 1785-1787-1799 Berkeley - FA Monitoring & Inspections',qty:1,price:132.00}] });
+        }
+      });
+    }
+
+    // Agr 38: West Coast Green Rush Oakland — $55/mo, Terminated 8/29/2025
+    if (r['Agreement#'] == 38) {
+      r['Agreement Status'] = 'Terminated';
+      r['Agreement Expiration Date'] = '8/29/2025';
+      r['Last Invoice Date'] = '8/1/2025';
+      const inv38 = [
+        {num:'23203',date:'10/1/2024'},{num:'24342',date:'11/1/2024'},{num:'24857',date:'12/1/2024'},
+        {num:'26034',date:'1/1/2025'},{num:'26609',date:'2/1/2025'},{num:'27499',date:'3/1/2025'},
+        {num:'27813',date:'4/1/2025'},{num:'28641',date:'5/1/2025'},{num:'29394',date:'6/1/2025'},
+        {num:'30402',date:'7/1/2025'},{num:'30928',date:'8/1/2025'},
+      ];
+      inv38.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:55.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'West Coast Green Rush Oakland - Intrusion Monitoring',qty:1,price:55.00}] });
+        }
+      });
+      invoiceDB[key] = invoiceDB[key].filter(inv => inv.billed && inv.invNum);
+    }
+
+    // Agr 36: Longfellow 2445 Faber & 1804 Embarcadero — Terminated 4/30/2025, custom split billing
+    if (r['Agreement#'] == 36) {
+      r['Agreement Status'] = 'Terminated';
+      r['Agreement Expiration Date'] = '4/30/2025';
+      r['Last Invoice Date'] = '4/1/2025';
+      const inv36 = [
+        {num:'23201', date:'10/1/2024', amount:300.00, desc:'Billing 1 of 2 — Longfellow Access Hosting'},
+        {num:'23200', date:'10/1/2024', amount:150.00, desc:'Billing 2 of 2 — Longfellow Access Hosting'},
+        {num:'30839', date:'7/22/2025', amount:225.00, desc:'Adjustment — Longfellow Access Hosting'},
+        {num:'26032', date:'1/1/2025',  amount:450.00, desc:'Billing 1 of 2 — Longfellow Access Hosting'},
+        {num:'27809', date:'4/1/2025',  amount:450.00, desc:'Billing 2 of 2 — Longfellow Access Hosting'},
+      ];
+      inv36.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:i.amount,
+            period:i.desc, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:i.desc, qty:1, price:i.amount}] });
+        }
+      });
+      // No pending entries — terminated
+      invoiceDB[key] = invoiceDB[key].filter(inv => inv.billed && inv.invNum);
+    }
+
+    // Agr 33: Marco Torrente Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 33) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv33 = [
+        {num:'23197',date:'10/1/2024'},{num:'24338',date:'11/1/2024'},{num:'24853',date:'12/1/2024'},
+        {num:'26029',date:'1/1/2025'},{num:'26605',date:'2/1/2025'},{num:'27495',date:'3/1/2025'},
+        {num:'27805',date:'4/1/2025'},{num:'28637',date:'5/1/2025'},{num:'29437',date:'6/1/2025'},
+        {num:'31243',date:'7/1/2025'},{num:'30925',date:'8/1/2025'},{num:'31412',date:'9/1/2025'},
+        {num:'31787',date:'10/1/2025'},{num:'31994',date:'11/1/2025'},{num:'32277',date:'12/1/2025'},
+        {num:'32482',date:'1/1/2026'},{num:'32624',date:'2/1/2026'},{num:'32864',date:'3/1/2026'},
+        {num:'33049',date:'4/1/2026'},{num:'33231',date:'5/1/2026'},
+      ];
+      inv33.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Marco Torrente Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 34: Deborah Wahl Residence — $25/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 34) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv34 = [
+        {num:'23198',date:'10/1/2024'},{num:'24339',date:'11/1/2024'},{num:'24854',date:'12/1/2024'},
+        {num:'26030',date:'1/1/2025'},{num:'26606',date:'2/1/2025'},{num:'27496',date:'3/1/2025'},
+        {num:'27806',date:'4/1/2025'},{num:'28638',date:'5/1/2025'},{num:'29478',date:'6/1/2025'},
+        {num:'30400',date:'7/1/2025'},{num:'30926',date:'8/1/2025'},{num:'31414',date:'9/1/2025'},
+        {num:'31788',date:'10/1/2025'},{num:'31995',date:'11/1/2025'},{num:'32278',date:'12/1/2025'},
+        {num:'32483',date:'1/1/2026'},{num:'32625',date:'2/1/2026'},{num:'32865',date:'3/1/2026'},
+        {num:'33053',date:'4/1/2026'},{num:'33232',date:'5/1/2026'},
+      ];
+      inv34.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:25.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Deborah Wahl Residence - Intrusion Monitoring',qty:1,price:25.00}] });
+        }
+      });
+    }
+
+    // Agr 35: Kathleen Jenner Residence — $26/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 35) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv35 = [
+        {num:'23199',date:'10/1/2024'},{num:'24340',date:'11/1/2024'},{num:'24855',date:'12/1/2024'},
+        {num:'26031',date:'1/1/2025'},{num:'26607',date:'2/1/2025'},{num:'27497',date:'3/1/2025'},
+        {num:'27807',date:'4/1/2025'},{num:'28639',date:'5/1/2025'},{num:'29479',date:'6/1/2025'},
+        {num:'30401',date:'7/1/2025'},{num:'30927',date:'8/1/2025'},{num:'31415',date:'9/1/2025'},
+        {num:'31789',date:'10/1/2025'},{num:'31996',date:'11/1/2025'},{num:'32279',date:'12/1/2025'},
+        {num:'32484',date:'1/1/2026'},{num:'32626',date:'2/1/2026'},{num:'32866',date:'3/1/2026'},
+        {num:'33054',date:'4/1/2026'},{num:'33233',date:'5/1/2026'},
+      ];
+      inv35.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:26.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Katheleen Jenner Residence - Intrusion Monitoring',qty:1,price:26.00}] });
+        }
+      });
+    }
+
+    // Agr 32: Robert Stoltenberg Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 32) {
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv32 = [
+        {num:'23196',date:'10/1/2024'},{num:'24337',date:'11/1/2024'},{num:'24852',date:'12/1/2024'},
+        {num:'26028',date:'1/1/2025'},{num:'26604',date:'2/1/2025'},{num:'27494',date:'3/1/2025'},
+        {num:'27769',date:'4/1/2025'},{num:'28636',date:'5/1/2025'},{num:'29436',date:'6/1/2025'},
+        {num:'30399',date:'7/1/2025'},{num:'30924',date:'8/1/2025'},{num:'31411',date:'9/1/2025'},
+        {num:'31786',date:'10/1/2025'},{num:'31993',date:'11/1/2025'},{num:'32276',date:'12/1/2025'},
+        {num:'32481',date:'1/1/2026'},{num:'32623',date:'2/1/2026'},{num:'32863',date:'3/1/2026'},
+        {num:'33048',date:'4/1/2026'},{num:'33230',date:'5/1/2026'},
+      ];
+      inv32.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Robert Stoltenberg Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 31: SFPUC Headworks — $48/mo, Terminated 3/31/2026
+    if (r['Agreement#'] == 31) {
+      r['Agreement Status'] = 'Terminated';
+      r['Agreement Expiration Date'] = '3/31/2026';
+      r['Last Invoice Date'] = '3/1/2026';
+      const inv31 = [
+        {num:'23195',date:'10/1/2024'},{num:'24336',date:'11/1/2024'},{num:'24851',date:'12/1/2024'},
+        {num:'26027',date:'1/1/2025'},{num:'26603',date:'2/1/2025'},{num:'27493',date:'3/1/2025'},
+        {num:'27768',date:'4/1/2025'},{num:'28635',date:'5/1/2025'},{num:'29435',date:'6/1/2025'},
+        {num:'30493',date:'7/1/2025'},{num:'31027',date:'8/1/2025'},{num:'31516',date:'9/1/2025'},
+        {num:'31845',date:'10/1/2025'},{num:'32051',date:'11/1/2025'},{num:'32308',date:'12/1/2025'},
+        {num:'32531',date:'1/1/2026'},{num:'32709',date:'2/1/2026'},{num:'32902',date:'3/1/2026'},
+      ];
+      inv31.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:48.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'SFPUC Headworks - Intrusion Monitoring',qty:1,price:48.00}] });
+        }
+      });
+      // Remove any pending entries — terminated
+      invoiceDB[key] = invoiceDB[key].filter(inv => inv.billed && inv.invNum);
+    }
+
+    // Agr 30: Karen Serkiz Residence — $63/quarter, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 30) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33029; r['Last Invoice Date'] = '4/1/2026'; r['Last Invoice Amount'] = '$63.00'; }
+      r['Last Invoice Date'] = '4/1/2026';
+      const inv30 = [
+        {num:'23194',date:'10/1/2024'},{num:'26026',date:'1/1/2025'},
+        {num:'27755',date:'4/1/2025'},{num:'30398',date:'7/1/2025'},
+        {num:'31785',date:'10/1/2025'},{num:'32480',date:'1/1/2026'},
+        {num:'33029',date:'4/1/2026'},
+      ];
+      inv30.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:63.00,
+            period:`Quarterly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Karen Serkiz Residence - Intrusion Monitoring',qty:1,price:63.00}] });
+        }
+      });
+      // Pending quarterly: 7/1/2026 and 10/1/2026
+      ['7/1/2026','10/1/2026'].forEach(date => {
+        const d = parseDateStr(date);
+        const exists = invoiceDB[key].find(inv => {
+          const id = parseDateStr(inv.date);
+          return id && id.getMonth()===d.getMonth() && id.getFullYear()===d.getFullYear();
+        });
+        if (!exists) invoiceDB[key].push({ invNum:'', date, amount:63.00,
+          period:`Quarterly Service — ${date}`, due:'Net 30 Days', notes:'', billed:false, freqSeed:true,
+          lineItems:[{desc:'Karen Serkiz Residence - Intrusion Monitoring',qty:1,price:63.00}] });
+      });
+    }
+
+    // Agr 29: David Rivera Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 29) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33229; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv29 = [
+        {num:'23192',date:'10/1/2024'},{num:'24334',date:'11/1/2024'},{num:'24849',date:'12/1/2024'},
+        {num:'26025',date:'1/1/2025'},{num:'26601',date:'2/1/2025'},{num:'27491',date:'3/1/2025'},
+        {num:'27721',date:'4/1/2025'},{num:'28633',date:'5/1/2025'},{num:'29393',date:'6/1/2025'},
+        {num:'30397',date:'7/1/2025'},{num:'30923',date:'8/1/2025'},{num:'31410',date:'9/1/2025'},
+        {num:'31784',date:'10/1/2025'},{num:'31992',date:'11/1/2025'},{num:'32274',date:'12/1/2025'},
+        {num:'32479',date:'1/1/2026'},{num:'32622',date:'2/1/2026'},{num:'32862',date:'3/1/2026'},
+        {num:'33046',date:'4/1/2026'},{num:'33229',date:'5/1/2026'},
+      ];
+      inv29.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'David Rivera Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 28: Osvaldo Perez Residence — $25/mo, Terminated 1/28/2025
+    if (r['Agreement#'] == 28) {
+      r['Agreement Status'] = 'Terminated';
+      r['Agreement Expiration Date'] = '1/28/2025';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 26024; r['Last Invoice Date'] = '1/1/2025'; r['Last Invoice Amount'] = '$25.00'; }
+      r['Last Invoice Date'] = '1/1/2025';
+      const inv28 = [
+        {num:'23191',date:'10/1/2024'},{num:'24333',date:'11/1/2024'},
+        {num:'24848',date:'12/1/2024'},{num:'26024',date:'1/1/2025'},
+      ];
+      inv28.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:25.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Osvaldo Perez Residence - Intrusion Monitoring',qty:1,price:25.00}] });
+        }
+      });
+      // Remove any pending entries — terminated
+      invoiceDB[key] = invoiceDB[key].filter(inv => inv.billed && inv.invNum);
+    }
+
+    // Agr 25: Mike Muniz Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 25) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33226; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv25 = [
+        {num:'23188',date:'10/1/2024'},{num:'24330',date:'11/1/2024'},{num:'24845',date:'12/1/2024'},
+        {num:'26021',date:'1/1/2025'},{num:'26598',date:'2/1/2025'},{num:'27488',date:'3/1/2025'},
+        {num:'27718',date:'4/1/2025'},{num:'28630',date:'5/1/2025'},{num:'29390',date:'6/1/2025'},
+        {num:'30394',date:'7/1/2025'},{num:'30920',date:'8/1/2025'},{num:'31407',date:'9/1/2025'},
+        {num:'31781',date:'10/1/2025'},{num:'31989',date:'11/1/2025'},{num:'32271',date:'12/1/2025'},
+        {num:'32476',date:'1/1/2026'},{num:'32601',date:'2/1/2026'},{num:'32859',date:'3/1/2026'},
+        {num:'33043',date:'4/1/2026'},{num:'33226',date:'5/1/2026'},
+      ];
+      inv25.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Mike Muniz Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 26: Mark Ogren Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 26) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33227; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv26 = [
+        {num:'23189',date:'10/1/2024'},{num:'24331',date:'11/1/2024'},{num:'24846',date:'12/1/2024'},
+        {num:'26022',date:'1/1/2025'},{num:'26599',date:'2/1/2025'},{num:'27489',date:'3/1/2025'},
+        {num:'27719',date:'4/1/2025'},{num:'28631',date:'5/1/2025'},{num:'29391',date:'6/1/2025'},
+        {num:'30395',date:'7/1/2025'},{num:'30921',date:'8/1/2025'},{num:'31408',date:'9/1/2025'},
+        {num:'31782',date:'10/1/2025'},{num:'31990',date:'11/1/2025'},{num:'32272',date:'12/1/2025'},
+        {num:'32477',date:'1/1/2026'},{num:'32620',date:'2/1/2026'},{num:'32860',date:'3/1/2026'},
+        {num:'33044',date:'4/1/2026'},{num:'33227',date:'5/1/2026'},
+      ];
+      inv26.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Mark Ogren Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 27: Daniel Olivera Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 27) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33228; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv27 = [
+        {num:'23190',date:'10/1/2024'},{num:'24332',date:'11/1/2024'},{num:'24847',date:'12/1/2024'},
+        {num:'26023',date:'1/1/2025'},{num:'26600',date:'2/1/2025'},{num:'27490',date:'3/1/2025'},
+        {num:'27720',date:'4/1/2025'},{num:'28632',date:'5/1/2025'},{num:'29392',date:'6/1/2025'},
+        {num:'30396',date:'7/1/2025'},{num:'30922',date:'8/1/2025'},{num:'31409',date:'9/1/2025'},
+        {num:'31783',date:'10/1/2025'},{num:'31991',date:'11/1/2025'},{num:'32273',date:'12/1/2025'},
+        {num:'32478',date:'1/1/2026'},{num:'32621',date:'2/1/2026'},{num:'32861',date:'3/1/2026'},
+        {num:'33045',date:'4/1/2026'},{num:'33228',date:'5/1/2026'},
+      ];
+      inv27.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Daniel Olivera Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 22: George Gonsalves Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 22) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33223; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv22 = [
+        {num:'23185',date:'10/1/2024'},{num:'24327',date:'11/1/2024'},{num:'24842',date:'12/1/2024'},
+        {num:'26018',date:'1/1/2025'},{num:'26595',date:'2/1/2025'},{num:'27485',date:'3/1/2025'},
+        {num:'27715',date:'4/1/2025'},{num:'28627',date:'5/1/2025'},{num:'29387',date:'6/1/2025'},
+        {num:'30391',date:'7/1/2025'},{num:'30917',date:'8/1/2025'},{num:'31404',date:'9/1/2025'},
+        {num:'31778',date:'10/1/2025'},{num:'31986',date:'11/1/2025'},{num:'32268',date:'12/1/2025'},
+        {num:'32473',date:'1/1/2026'},{num:'32597',date:'2/1/2026'},{num:'32856',date:'3/1/2026'},
+        {num:'33040',date:'4/1/2026'},{num:'33223',date:'5/1/2026'},
+      ];
+      inv22.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'George Gonsalves Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 23: Leon Laucirica Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 23) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33224; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv23 = [
+        {num:'23186',date:'10/1/2024'},{num:'24328',date:'11/1/2024'},{num:'24843',date:'12/1/2024'},
+        {num:'26019',date:'1/1/2025'},{num:'26596',date:'2/1/2025'},{num:'27486',date:'3/1/2025'},
+        {num:'27716',date:'4/1/2025'},{num:'28628',date:'5/1/2025'},{num:'29388',date:'6/1/2025'},
+        {num:'30392',date:'7/1/2025'},{num:'30918',date:'8/1/2025'},{num:'31405',date:'9/1/2025'},
+        {num:'31779',date:'10/1/2025'},{num:'31987',date:'11/1/2025'},{num:'32269',date:'12/1/2025'},
+        {num:'32474',date:'1/1/2026'},{num:'32599',date:'2/1/2026'},{num:'32857',date:'3/1/2026'},
+        {num:'33041',date:'4/1/2026'},{num:'33224',date:'5/1/2026'},
+      ];
+      inv23.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Leon Laucirica Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 24: Tim Lewis Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 24) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33225; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv24 = [
+        {num:'23187',date:'10/1/2024'},{num:'24329',date:'11/1/2024'},{num:'24844',date:'12/1/2024'},
+        {num:'26020',date:'1/1/2025'},{num:'26597',date:'2/1/2025'},{num:'27487',date:'3/1/2025'},
+        {num:'27717',date:'4/1/2025'},{num:'28629',date:'5/1/2025'},{num:'29389',date:'6/1/2025'},
+        {num:'30393',date:'7/1/2025'},{num:'30919',date:'8/1/2025'},{num:'31406',date:'9/1/2025'},
+        {num:'31780',date:'10/1/2025'},{num:'31988',date:'11/1/2025'},{num:'32270',date:'12/1/2025'},
+        {num:'32475',date:'1/1/2026'},{num:'32600',date:'2/1/2026'},{num:'32858',date:'3/1/2026'},
+        {num:'33042',date:'4/1/2026'},{num:'33225',date:'5/1/2026'},
+      ];
+      inv24.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Tim Lewis Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 21: Michael Freitas Residence — $26.50/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 21) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33222; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$26.50'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv21 = [
+        {num:'23184',date:'10/1/2024'},{num:'24326',date:'11/1/2024'},{num:'24841',date:'12/1/2024'},
+        {num:'26017',date:'1/1/2025'},{num:'26594',date:'2/1/2025'},{num:'27484',date:'3/1/2025'},
+        {num:'27714',date:'4/1/2025'},{num:'28626',date:'5/1/2025'},{num:'29386',date:'6/1/2025'},
+        {num:'30390',date:'7/1/2025'},{num:'30916',date:'8/1/2025'},{num:'31403',date:'9/1/2025'},
+        {num:'31777',date:'10/1/2025'},{num:'31985',date:'11/1/2025'},{num:'32267',date:'12/1/2025'},
+        {num:'32472',date:'1/1/2026'},{num:'32596',date:'2/1/2026'},{num:'32855',date:'3/1/2026'},
+        {num:'33039',date:'4/1/2026'},{num:'33222',date:'5/1/2026'},
+      ];
+      inv21.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:26.50,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Michael Freitas Residence - Intrusion Monitoring',qty:1,price:26.50}] });
+        }
+      });
+    }
+
+    // Agr 19: Kari Dutra Residence — $21/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 19) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33221; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv19 = [
+        {num:'23181',date:'10/1/2024'},{num:'24324',date:'11/1/2024'},{num:'24839',date:'12/1/2024'},
+        {num:'26016',date:'1/1/2025'},{num:'26592',date:'2/1/2025'},{num:'27482',date:'3/1/2025'},
+        {num:'27712',date:'4/1/2025'},{num:'28624',date:'5/1/2025'},{num:'29385',date:'6/1/2025'},
+        {num:'30389',date:'7/1/2025'},{num:'30915',date:'8/1/2025'},{num:'31402',date:'9/1/2025'},
+        {num:'31776',date:'10/1/2025'},{num:'31984',date:'11/1/2025'},{num:'32266',date:'12/1/2025'},
+        {num:'32471',date:'1/1/2026'},{num:'32595',date:'2/1/2026'},{num:'32854',date:'3/1/2026'},
+        {num:'33038',date:'4/1/2026'},{num:'33221',date:'5/1/2026'},
+      ];
+      inv19.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Kari Dutra Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 20: Ron Fletcher — $312/yr Annual, billed each October, active through 9/30/2029
+    if (r['Agreement#'] == 20) {
+      r['Agreement Effective Date'] = '10/1/2025';
+      r['Agreement Expiration Date'] = '9/30/2029';
+      r['Monthly Billing Charge'] = '$312.00';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 31843; r['Last Invoice Date'] = '10/1/2025'; r['Last Invoice Amount'] = '$312.00'; }
+      r['Last Invoice Date'] = '10/1/2025';
+      // Purge all and rebuild cleanly
+      invoiceDB[key] = [];
+      const inv20billed = [
+        {num:'23183', date:'10/1/2024', amount:252.00},  // prior rate
+        {num:'31843', date:'10/1/2025', amount:312.00},
+      ];
+      inv20billed.forEach(i => {
+        invoiceDB[key].push({ invNum:i.num, date:i.date, amount:i.amount,
+          period:`Annual Service — ${i.date}`, due:'Due Upon Receipt', notes:'', billed:true,
+          lineItems:[{desc:'Ron Fletcher - Intrusion Monitoring',qty:1,price:i.amount}] });
+      });
+      // Pending: 10/1/2026, 10/1/2027, 10/1/2028 per billing schedule
+      ['10/1/2026','10/1/2027','10/1/2028'].forEach(date => {
+        invoiceDB[key].push({ invNum:'', date, amount:312.00,
+          period:`Annual Service — ${date}`, due:'Due Upon Receipt', notes:'', billed:false, freqSeed:true,
+          lineItems:[{desc:'Ron Fletcher - Intrusion Monitoring',qty:1,price:312.00}] });
+      });
+    }
+
+    // Agr 17: Fred Doan Residence — $45/mo, Active through 5/31/2028
+    if (r['Agreement#'] == 17) {
+      r['Agreement Status'] = 'Active';
+      r['Agreement Expiration Date'] = '5/31/2028';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33219; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$45.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv17 = [
+        {num:'23179',date:'10/1/2024'},{num:'24322',date:'11/1/2024'},{num:'24837',date:'12/1/2024'},
+        {num:'26014',date:'1/1/2025'},{num:'26590',date:'2/1/2025'},{num:'27479',date:'3/1/2025'},
+        {num:'27710',date:'4/1/2025'},{num:'28622',date:'5/1/2025'},{num:'29383',date:'6/1/2025'},
+        {num:'30387',date:'7/1/2025'},{num:'30913',date:'8/1/2025'},{num:'31400',date:'9/1/2025'},
+        {num:'31774',date:'10/1/2025'},{num:'31982',date:'11/1/2025'},{num:'32275',date:'12/1/2025'},
+        {num:'32527',date:'1/1/2026'},{num:'32591',date:'2/1/2026'},{num:'32852',date:'3/1/2026'},
+        {num:'33035',date:'4/1/2026'},{num:'33219',date:'5/1/2026'},
+      ];
+      inv17.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:45.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Fred Doan Residence - Intrusion Monitoring',qty:1,price:45.00}] });
+        }
+      });
+      // No cleanup needed — freq seeder handles pending entries from 6/1/2026 through 5/1/2028
+    }
+
+    // Agr 18: Tamar Mahru Residence — $37/mo, 1/1/2026–12/31/2026
+    if (r['Agreement#'] == 18) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33220; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$37.00'; }
+      r['Last Invoice Date'] = '5/1/2026';
+      const inv18 = [
+        {num:'23180',date:'10/1/2024'},{num:'24323',date:'11/1/2024'},{num:'24838',date:'12/1/2024'},
+        {num:'26015',date:'1/1/2025'},{num:'26591',date:'2/1/2025'},{num:'27480',date:'3/1/2025'},
+        {num:'27711',date:'4/1/2025'},{num:'28623',date:'5/1/2025'},{num:'29384',date:'6/1/2025'},
+        {num:'30388',date:'7/1/2025'},{num:'30914',date:'8/1/2025'},{num:'31401',date:'9/1/2025'},
+        {num:'31775',date:'10/1/2025'},{num:'31983',date:'11/1/2025'},{num:'32265',date:'12/1/2025'},
+        {num:'32470',date:'1/1/2026'},{num:'32592',date:'2/1/2026'},{num:'32853',date:'3/1/2026'},
+        {num:'33036',date:'4/1/2026'},{num:'33220',date:'5/1/2026'},
+      ];
+      inv18.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:37.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Tamar Mahru Residence - Intrusion Monitoring',qty:1,price:37.00}] });
+        }
+      });
+    }
+
+    // Agr 16: Tom Curran Residence — $21/mo, 1/1/2026–12/31/2027
+    if (r['Agreement#'] == 16) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33214; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$21.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv16 = [
+        {num:'23178',date:'10/1/2024'},{num:'24321',date:'11/1/2024'},{num:'24836',date:'12/1/2024'},
+        {num:'26013',date:'1/1/2025'},{num:'26137',date:'2/1/2025'},{num:'27473',date:'3/1/2025'},
+        {num:'27709',date:'4/1/2025'},{num:'28621',date:'5/1/2025'},{num:'29432',date:'6/1/2025'},
+        {num:'30490',date:'7/1/2025'},{num:'30945',date:'8/1/2025'},{num:'31485',date:'9/1/2025'},
+        {num:'31837',date:'10/1/2025'},{num:'32047',date:'11/1/2025'},{num:'32264',date:'12/1/2025'},
+        {num:'32449',date:'1/1/2026'},{num:'32706',date:'2/1/2026'},{num:'32889',date:'3/1/2026'},
+        {num:'33087',date:'4/1/2026'},{num:'33214',date:'5/1/2026'},
+      ];
+      inv16.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:21.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Tom Curran Residence - Intrusion Monitoring',qty:1,price:21.00}] });
+        }
+      });
+    }
+
+    // Agr 12: SMW Local 104 Fairfield Intrusion Monitoring — $50/mo, 8/1/2025–7/31/2026
+    if (r['Agreement#'] == 12) {
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33265; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$50.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv12 = [
+        {num:'23174',date:'10/1/2024'},{num:'24316',date:'11/1/2024'},{num:'24832',date:'12/1/2024'},
+        {num:'25501',date:'1/1/2025'},{num:'26579',date:'2/1/2025'},{num:'27446',date:'3/1/2025'},
+        {num:'27704',date:'4/1/2025'},{num:'28605',date:'5/1/2025'},{num:'29518',date:'6/1/2025'},
+        {num:'30471',date:'7/1/2025'},{num:'31094',date:'8/1/2025'},{num:'31490',date:'9/1/2025'},
+        {num:'31813',date:'10/1/2025'},{num:'32028',date:'11/1/2025'},{num:'32320',date:'12/1/2025'},
+        {num:'32460',date:'1/1/2026'},{num:'32683',date:'2/1/2026'},{num:'32899',date:'3/1/2026'},
+        {num:'33086',date:'4/1/2026'},{num:'33265',date:'5/1/2026'},
+      ];
+      inv12.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:50.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'SMW Local 104 - Fairfield - Intrusion Monitoring',qty:1,price:50.00}] });
+        }
+      });
+    }
+
+    // Agr 11: SMW Local 104 Fairfield FA — $235/mo, current term 4/1/2026–3/31/2027
+    if (r['Agreement#'] == 11) {
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '3/31/2026') r['Agreement Expiration Date'] = '3/31/2027';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33264; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$235.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv11 = [
+        {num:'23173',date:'10/1/2024'},{num:'24315',date:'11/1/2024'},{num:'24831',date:'12/1/2024'},
+        {num:'25500',date:'1/1/2025'},{num:'26578',date:'2/1/2025'},{num:'27394',date:'3/1/2025'},
+        {num:'27827',date:'4/1/2025'},{num:'28604',date:'5/1/2025'},{num:'29517',date:'6/1/2025'},
+        {num:'30470',date:'7/1/2025'},{num:'31013',date:'8/1/2025'},{num:'31489',date:'9/1/2025'},
+        {num:'31812',date:'10/1/2025'},{num:'32027',date:'11/1/2025'},{num:'32319',date:'12/1/2025'},
+        {num:'32459',date:'1/1/2026'},{num:'32680',date:'2/1/2026'},{num:'32898',date:'3/1/2026'},
+        {num:'33162',date:'4/1/2026'},{num:'33264',date:'5/1/2026'},
+      ];
+      inv11.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:235.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'SMW Local 104 - Fairfield FA',qty:1,price:235.00}] });
+        }
+      });
+    }
+
+    // Agr 6: Carpenters Local 2236 Security Monitoring — $50/mo, term 1/1/2026–12/31/2027
+    if (r['Agreement#'] == 6) {
+      const inv6 = [
+        {num:'23217',date:'10/1/2024'},{num:'24363',date:'11/1/2024'},{num:'24879',date:'12/1/2024'},
+        {num:'26051',date:'1/1/2025'},{num:'26631',date:'2/1/2025'},{num:'27519',date:'3/1/2025'},
+        {num:'27838',date:'4/1/2025'},{num:'28659',date:'5/1/2025'},{num:'29526',date:'6/1/2025'},
+        {num:'30502',date:'7/1/2025'},{num:'30949',date:'8/1/2025'},{num:'31523',date:'9/1/2025'},
+        {num:'31809',date:'10/1/2025'},{num:'32058',date:'11/1/2025'},{num:'32315',date:'12/1/2025'},
+        {num:'32537',date:'1/1/2026'},{num:'32730',date:'2/1/2026'},{num:'32968',date:'3/1/2026'},
+        {num:'33082',date:'4/1/2026'},{num:'33255',date:'5/1/2026'},
+      ];
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33255; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$50.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      inv6.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:50.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'Carpenters Local 2236 - Security Monitoring',qty:1,price:50.00}] });
+        }
+      });
+    }
+
+    // Agr 7: Mercy Housing Hacienda FA — $1,140/mo, 10/1/2024–9/30/2026
+    // Two-Way (619320B) $45/mo — suppress freq seeder, billed within FA schedule
+    if (r['Agreement#'] == 7 && r['Central Station Account#'] === '619320B') {
+      if (!r['Other Billing Notes'] || r['Other Billing Notes'] === '') {
+        r['Other Billing Notes'] = 'Two-Way monitoring ($45/mo) is billed as part of the FA Monitoring invoice. No separate billing.';
+      }
+      invoiceDB[key] = (invoiceDB[key]||[]).filter(inv => !(inv.freqSeed && Math.abs(inv.amount - 45) < 0.01));
+    }
+    if (r['Agreement#'] == 7 && r['Central Station Account#'] === 'AES9320/619320') {
+      const inv7 = [
+        {num:'23218',date:'10/1/2024'},{num:'24371',date:'11/1/2024'},{num:'24888',date:'12/1/2024'},
+        {num:'25517',date:'1/1/2025'},{num:'26727',date:'2/1/2025'},{num:'27527',date:'3/1/2025'},
+        {num:'27845',date:'4/1/2025'},{num:'28667',date:'5/1/2025'},{num:'29533',date:'6/1/2025'},
+        {num:'30514',date:'7/1/2025'},{num:'30954',date:'8/1/2025'},{num:'31524',date:'9/1/2025'},
+        {num:'31839',date:'10/1/2025'},{num:'32067',date:'11/1/2025'},{num:'32305',date:'12/1/2025'},
+        {num:'32546',date:'1/1/2026'},{num:'32737',date:'2/1/2026'},{num:'32895',date:'3/1/2026'},
+        {num:'33083',date:'4/1/2026'},{num:'33323',date:'5/1/2026'},
+      ];
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33323; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$1,140.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      inv7.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:1140.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'Mercy Housing - Hacienda - FA Monitoring & Inspections',qty:1,price:1140.00}] });
+        }
+      });
+    }
+
+    // Agr 8: Corefact San Leandro FA — $250/mo, 10/1/2025–9/30/2027 (billing started 10/1/2024)
+    if (r['Agreement#'] == 8) {
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '10/1/2025';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '12/31/2026') r['Agreement Expiration Date'] = '9/30/2027';
+      const inv8 = [
+        {num:'23219',date:'10/1/2024'},{num:'24381',date:'11/1/2024'},{num:'24898',date:'12/1/2024'},
+        {num:'25527',date:'1/1/2025'},{num:'26735',date:'2/1/2025'},{num:'27537',date:'3/1/2025'},
+        {num:'27857',date:'4/1/2025'},{num:'28677',date:'5/1/2025'},{num:'29539',date:'6/1/2025'},
+        {num:'30521',date:'7/1/2025'},{num:'30955',date:'8/1/2025'},{num:'31525',date:'9/1/2025'},
+        {num:'31865',date:'10/1/2025'},{num:'32073',date:'11/1/2025'},{num:'32306',date:'12/1/2025'},
+        {num:'32552',date:'1/1/2026'},{num:'32745',date:'2/1/2026'},{num:'32896',date:'3/1/2026'},
+        {num:'33084',date:'4/1/2026'},{num:'33262',date:'5/1/2026'},
+      ];
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33262; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$250.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      inv8.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:250.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Corefact - San Leandro - FA Monitoring & Inspections',qty:1,price:250.00}] });
+        }
+      });
+    }
+
+    // Agr 2: Morello Park Elementary (Woodbridge Children's Center) — $310/mo, 9/1/2024–8/31/2027
+    if (r['Agreement#'] == 2) {
+      const inv2 = [
+        {num:'23170',date:'9/1/2024'},{num:'23182',date:'10/1/2024'},{num:'24325',date:'11/1/2024'},
+        {num:'24840',date:'12/1/2024'},{num:'25505',date:'1/1/2025'},{num:'26593',date:'2/1/2025'},
+        {num:'27483',date:'3/1/2025'},{num:'27713',date:'4/1/2025'},{num:'28625',date:'5/1/2025'},
+        {num:'29433',date:'6/1/2025'},{num:'30491',date:'7/1/2025'},{num:'30952',date:'8/1/2025'},
+        {num:'31513',date:'9/1/2025'},{num:'31838',date:'10/1/2025'},{num:'32048',date:'11/1/2025'},
+        {num:'32303',date:'12/1/2025'},{num:'32528',date:'1/1/2026'},{num:'32707',date:'2/1/2026'},
+        {num:'32893',date:'3/1/2026'},{num:'33078',date:'4/1/2026'},{num:'33260',date:'5/1/2026'},
+      ];
+      inv2.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:310.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'Morello Park Elementary - FA Monitoring & Inspections',qty:1,price:310.00}] });
+        }
+      });
+    }
+
+    // Agr 3: Santos Office Napa — $65/mo, 9/1/2024–8/31/2026
+    if (r['Agreement#'] == 3) {
+      const inv3 = [
+        {num:'23171',date:'9/1/2024'},{num:'23193',date:'10/1/2024'},{num:'24335',date:'11/1/2024'},
+        {num:'24850',date:'12/1/2024'},{num:'25506',date:'1/1/2025'},{num:'26602',date:'2/1/2025'},
+        {num:'27492',date:'3/1/2025'},{num:'27736',date:'4/1/2025'},{num:'28634',date:'5/1/2025'},
+        {num:'29434',date:'6/1/2025'},{num:'30492',date:'7/1/2025'},{num:'30953',date:'8/1/2025'},
+        {num:'31514',date:'9/1/2025'},{num:'31844',date:'10/1/2025'},{num:'32050',date:'11/1/2025'},
+        {num:'32304',date:'12/1/2025'},{num:'32530',date:'1/1/2026'},{num:'32708',date:'2/1/2026'},
+        {num:'32894',date:'3/1/2026'},{num:'33079',date:'4/1/2026'},{num:'33261',date:'5/1/2026'},
+      ];
+      inv3.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:65.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 30 Days', notes:'', billed:true,
+            lineItems:[{desc:'Santos Offices Napa - Intrusion Monitoring',qty:1,price:65.00}] });
+        }
+      });
+    }
+
+    // Agr 5: Carpenters Local 2236 — $225/mo, current term 1/1/2026–12/31/2027 (billing started 10/1/2024)
+    if (r['Agreement#'] == 5) {
+      const inv5 = [
+        {num:'23225',date:'10/1/2024'},{num:'24353',date:'11/1/2024'},{num:'24869',date:'12/1/2024'},
+        {num:'26043',date:'1/1/2025'},{num:'26630',date:'2/1/2025'},{num:'27510',date:'3/1/2025'},
+        {num:'27828',date:'4/1/2025'},{num:'27830',date:'5/1/2025'},{num:'29521',date:'6/1/2025'},
+        {num:'30501',date:'7/1/2025'},{num:'30948',date:'8/1/2025'},{num:'31522',date:'9/1/2025'},
+        {num:'31808',date:'10/1/2025'},{num:'32057',date:'11/1/2025'},{num:'32314',date:'12/1/2025'},
+        {num:'32536',date:'1/1/2026'},{num:'32726',date:'2/1/2026'},{num:'32969',date:'3/1/2026'},
+        {num:'33081',date:'4/1/2026'},{num:'33254',date:'5/1/2026'},
+      ];
+      inv5.forEach(i => {
+        if (!invoiceDB[key].find(inv => String(inv.invNum) === i.num)) {
+          invoiceDB[key].push({ invNum:i.num, date:i.date, amount:225.00,
+            period:`Monthly Service — ${i.date}`, due:'Net 45 Days', notes:'', billed:true,
+            lineItems:[{desc:'Carpenters Local 2236 - FA Monitoring & Inspections',qty:1,price:225.00}] });
+        }
+      });
+    }
+
+    // Agr 122: Operation Dignity — $243/mo, 2/1/2025–1/31/2028
+    if (r['Agreement#'] == 122) {
+      if (!r['Billing Address'] || r['Billing Address'] === '') r['Billing Address'] = '318 Harrison Street, Suite 302';
+      if (!r['City State Zip'] || r['City State Zip'] === '') r['City State Zip'] = 'Oakland, CA 94607';
+      if (!r['Site Address'] || r['Site Address'] === '') r['Site Address'] = '2350 5th St';
+      if (!r['Site City State Zip'] || r['Site City State Zip'] === '') r['Site City State Zip'] = 'Alameda, CA 94501';
+      if (!r['Agreement Effective Date'] || r['Agreement Effective Date'] === '') r['Agreement Effective Date'] = '2/1/2025';
+      if (!r['Agreement Expiration Date'] || r['Agreement Expiration Date'] === '') r['Agreement Expiration Date'] = '1/31/2028';
+      if (!r['Payment Terms'] || r['Payment Terms'] === '') r['Payment Terms'] = 'Net 30 Days';
+      if (!r['Billing Frequency'] || r['Billing Frequency'] === '') r['Billing Frequency'] = 'Monthly';
+      if (!r['Last Invoice#'] || r['Last Invoice#'] === '') { r['Last Invoice#'] = 33300; r['Last Invoice Date'] = '5/1/2026'; r['Last Invoice Amount'] = '$243.00'; }
+      r['Last Invoice Date'] = '5/1/2026'; // force freq seeder start
+      const inv122 = [
+        {num:'27679', date:'2/1/2025'},
+        {num:'27681', date:'3/1/2025'},
+        {num:'27684', date:'4/1/2025'},
+        {num:'28616', date:'5/1/2025'},
+        {num:'29428', date:'6/1/2025'},
+        {num:'30483', date:'7/1/2025'},
+        {num:'31019', date:'8/1/2025'},
+        {num:'31506', date:'9/1/2025'},
+        {num:'31833', date:'10/1/2025'},
+        {num:'32041', date:'11/1/2025'},
+        {num:'32337', date:'12/1/2025'},
+        {num:'32508', date:'1/1/2026'},
+        {num:'32684', date:'2/1/2026'},
+        {num:'32942', date:'3/1/2026'},
+        {num:'33144', date:'4/1/2026'},
+        {num:'33300', date:'5/1/2026'},
+      ];
+      inv122.forEach(i => {
+        const already = invoiceDB[key].find(inv => String(inv.invNum) === i.num);
+        if (!already) {
+          invoiceDB[key].push({
+            invNum: i.num, date: i.date, amount: 243.00,
+            period: `Monthly Service — ${i.date}`,
+            due: 'Net 30 Days', notes: '', billed: true,
+            lineItems: [{desc: 'Operation Dignity - FA Monitoring & Inspections', qty:1, price:243.00}]
+          });
+        }
+      });
+    }
+
+    // Agr 103 / E36440B: Two-Way — NOT billed separately. $45/mo billed annually ($540) as a line item
+    // within the FA Monitoring custom schedule invoice on 4/1/2027. No separate invoices generated.
+    if (r['Agreement#'] == 103 && r['Central Station Account#'] === 'E36440B') {
+      if (!r['Other Billing Notes'] || r['Other Billing Notes'] === '') {
+        r['Other Billing Notes'] = 'Two-Way monitoring ($45/mo) is billed annually as part of the FA Monitoring & Inspections custom invoice schedule. $540.00 included in 4/1/2027 FA invoice. No separate billing.';
+      }
+      // Remove any freq-seeded $45 monthly entries — only keep manually added entries
+      invoiceDB[key] = (invoiceDB[key]||[]).filter(inv =>
+        !(inv.freqSeed && Math.abs(inv.amount - 45) < 0.01)
+      );
+    }
+
+    // Agr 103 / E36440: Invoice 33338 dated 5/15/2026 for $2,680.20 (confirmed billed)
+    if (r['Agreement#'] == 103 && r['Central Station Account#'] === 'E36440') {
+      const already = invoiceDB[key].find(inv => String(inv.invNum) === '33338');
+      if (!already) {
+        invoiceDB[key].push({
+          invNum: '33338',
+          date: '5/15/2026',
+          amount: 2680.20,
+          period: 'Scheduled — 5/15/2026',
+          due: 'Net 30 days',
+          notes: '',
+          billed: true,
+          lineItems: [{desc: 'Merrill Gardens at Brentwood - FA Monitoring & Inspections', qty:1, price:2680.20}]
+        });
+      }
+    }
+
+  // Seed custom billing dates as future/unbilled invoices
+    for (let i = 1; i <= 4; i++) {
+      const dt = r[`Custom Bill Date ${i}`];
+      const amt = r[`Custom Bill Amount ${i}`];
+      if (dt && amt) {
+        const amtNum = parseFloat((amt||'').replace(/[$,]/g,''))||0;
+        const existing = invoiceDB[key].find(inv => inv.date === dt && Math.abs(inv.amount - amtNum) < 0.01);
+        if (!existing) {
+          invoiceDB[key].push({
+            invNum: '',
+            date: dt,
+            amount: amtNum,
+            period: `Scheduled — ${dt}`,
+            due: r['Payment Terms']||'Net 30 Days',
+            notes: '',
+            billed: false,
+            customSeed: true,
+            lineItems: [{desc: r['Account Name']||'Service', qty:1, price: amtNum}]
+          });
+        }
+      }
+    }
+
+    // ── Seed frequency-based invoice schedule for active non-custom accounts ──
+    // Skip: terminated, custom billing (has explicit dates above), T&M, one-time, no charge
+    const freq = (r['Billing Frequency']||'').trim();
+    const status = (r['Agreement Status']||'').trim();
+    const charge = parseFloat((r['Monthly Billing Charge']||'').replace(/[$,]/g,''))||0;
+    const skipFreqs = ['Custom','Terminated','T&M','One-Time',''];
+    // Skip agreements handled by manual hard-coded patches above
+    // Also skip Agr 103 E36440B (Two-Way) — billed annually within FA custom schedule ($45×12=$540 on 4/1/2027)
+    const manualSeedAgrs = [15, 20, 30, 41, 119];
+    const isAgrCSSkip = (r['Agreement#'] == 103 && r['Central Station Account#'] === 'E36440B');
+    if (status === 'Active' && charge > 0 && !skipFreqs.includes(freq) && !manualSeedAgrs.includes(r['Agreement#']) && !isAgrCSSkip) {
+      // Determine interval in months
+      const intervalMap = {'Monthly':1,'Quarterly':3,'Semi-Annual':6,'Annual':12};
+      const intervalMonths = intervalMap[freq];
+      if (intervalMonths) {
+        // Amount per invoice
+        // Amount per invoice — stored charge is the per-invoice amount for all frequencies
+        const invoiceAmt = charge;
+
+        // Parse last invoice date to find next due date
+        // Parse agreement expiration
+        const expDate = parseDateStr(r['Agreement Expiration Date']);
+        const lastInvDate = parseDateStr(r['Last Invoice Date']);
+
+        // Start from the month after last invoice, or from effective date if no last invoice
+        let cursor;
+        if (lastInvDate) {
+          cursor = new Date(lastInvDate.getFullYear(), lastInvDate.getMonth() + intervalMonths, 1);
+        } else {
+          const eff = parseDateStr(r['Agreement Effective Date']);
+          cursor = eff ? new Date(eff.getFullYear(), eff.getMonth(), 1) : new Date(2026, 5, 1);
+        }
+        // Safety: never generate entries before Jun 2026 — all prior history must be seeded via patches
+        const minCursor = new Date(2026, 5, 1);
+        if (cursor < minCursor) cursor = minCursor;
+
+        // Cap end at expiration or 2 years from now, whichever is sooner
+        const cap = expDate ? expDate : new Date(new Date().getFullYear()+2, 11, 31);
+        const hardCap = new Date(new Date().getFullYear()+2, 11, 31);
+        const endDate = (cap < hardCap) ? cap : hardCap;
+
+        // Generate up to 36 future invoice dates (safety limit)
+        let count = 0;
+        while (cursor <= endDate && count < 36) {
+          const dateStr = `${cursor.getMonth()+1}/1/${cursor.getFullYear()}`;
+          // Dedup by same month+year (not exact date) to prevent near-date duplicates
+          const cursorMonth = cursor.getMonth();
+          const cursorYear  = cursor.getFullYear();
+          const already = invoiceDB[key].find(inv => {
+            const d = parseDateStr(inv.date);
+            return d && d.getMonth() === cursorMonth && d.getFullYear() === cursorYear
+              && Math.abs(inv.amount - invoiceAmt) < 0.01;
+          });
+          if (!already) {
+            invoiceDB[key].push({
+              invNum: '',
+              date: dateStr,
+              amount: invoiceAmt,
+              period: `${freq} Service`,
+              due: r['Payment Terms']||'Net 30 Days',
+              notes: '',
+              billed: false,
+              freqSeed: true,
+              lineItems: [{desc: r['Account Name']||'Service', qty:1, price: invoiceAmt}]
+            });
+          }
+          cursor = new Date(cursor.getFullYear(), cursor.getMonth() + intervalMonths, 1);
+          count++;
+        }
+      }
+    }
+  });
+
+  // Global dedup: remove any unbilled freqSeed entry for a month that already has a billed invoice
+  Object.keys(invoiceDB).forEach(k => {
+    const billedMonths = new Set(
+      invoiceDB[k].filter(inv => inv.billed).map(inv => {
+        const d = parseDateStr(inv.date);
+        return d ? `${d.getFullYear()}-${d.getMonth()}` : null;
+      }).filter(Boolean)
+    );
+    invoiceDB[k] = invoiceDB[k].filter(inv => {
+      if (inv.billed) return true; // always keep billed
+      const d = parseDateStr(inv.date);
+      if (!d) return true;
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
+      return !billedMonths.has(key); // remove if billed invoice exists for same month
+    });
+  });
+
+  // Global cleanup: purge any freq-seeded entries that aren't on the 1st of the month
+  Object.keys(invoiceDB).forEach(k => {
+    invoiceDB[k] = invoiceDB[k].filter(inv => {
+      if (!inv.freqSeed) return true;
+      const d = parseDateStr(inv.date);
+      return d && d.getDate() === 1;
+    });
+  });
+
+  seedEmbeddedInvoices();
+  reconcileMonthly();
+  applyInvoiceLog();
+  populateBillingFromMeta();
+  populateSiteAddrFromTemplate();
+  applyLastInvoice();
+  normalizeSharedKeyTemplated();
   renderList();
+  // One-time bake: the generators above just built the full history. Persist it
+  // to the cloud and mark it so they never run again — from now on the cloud is
+  // authoritative and your deletes/edits stick.
+  try { await saveAllToCloud(); await setMeta('seeded_committed','true'); }
+  catch(e){ console.error('initial bake failed', e); }
 }
 
 function deepClone(o) { return JSON.parse(JSON.stringify(o)); }
@@ -2496,10 +3980,18 @@ function renderDetailTab() {
   const activeSvcs = SERVICES.filter(s=>r[s]==='YES');
   const inactiveSvcs = SERVICES.filter(s=>r[s]!=='YES');
 
-  function editField(field, label, val) {
+  // Lock state for the top "customer information" panels (Account Info, Site Contact,
+  // Billing Address, Site Address, Agreement Terms). When locked, inputs are read-only.
+  const LK   = detailsLocked;
+  const lkIn = LK ? 'readonly tabindex="-1"' : '';        // text inputs / textareas
+  const lkSel= LK ? 'disabled' : '';                       // <select> elements
+  const lkTitle = LK ? 'Locked — click Unlock to edit' : 'Click to edit';
+
+  function editField(field, label, val, lockable=true) {
+    const ro = (LK && lockable) ? 'readonly tabindex="-1"' : '';
     return `<div class="info-row">
       <span class="info-label">${label}</span>
-      <input class="editable-field" value="${esc(val||'')}" onchange="updateField(${idx},'${field}',this.value)" title="Click to edit">
+      <input class="editable-field" value="${esc(val||'')}" ${ro} onchange="updateField(${idx},'${field}',this.value)" title="${(LK&&lockable)?lkTitle:'Click to edit'}">
     </div>`;
   }
 
@@ -2543,7 +4035,19 @@ function renderDetailTab() {
   }
 
   return `
-    <div class="cards-row">
+    <div class="details-lock-bar">
+      <span class="details-lock-note" style="color:${LK?'var(--gray4)':'#1d4ed8'};">
+        ${LK
+          ? '🔒 Account information is <b>locked</b> to prevent accidental edits.'
+          : '🔓 Editing enabled — make your changes, then click <b>Lock</b> to protect them.'}
+      </span>
+      <button class="details-lock-btn" onclick="toggleDetailsLock()"
+        title="${LK?'Unlock the account info panels for editing':'Lock the account info panels'}"
+        style="border:1.5px solid ${LK?'var(--blue)':'var(--green)'};background:${LK?'#f0f7ff':'#e9f7ef'};color:${LK?'var(--blue)':'var(--green)'};">
+        ${LK?'🔒 Unlock to Edit':'🔓 Lock'}
+      </button>
+    </div>
+    <div class="cards-row${LK?' locked':''}">
       <div class="info-card">
         <h3>Account Info</h3>
         <div class="info-row"><span class="info-label">Customer #</span><span class="info-value">${r['Customer#']||'—'}</span></div>
@@ -2570,27 +4074,27 @@ function renderDetailTab() {
         <h3>Agreement Terms <span style="font-size:0.66rem;color:var(--blue);font-weight:400;font-style:italic">(click to edit)</span></h3>
         <div class="info-row">
           <span class="info-label">Effective</span>
-          <input class="editable-field" value="${esc(r['Agreement Effective Date']||'')}" onchange="updateTermDate(${idx},'Agreement Effective Date',this.value)" title="Contract start — adjusts the future schedule for recurring agreements">
+          <input class="editable-field" value="${esc(r['Agreement Effective Date']||'')}" ${lkIn} onchange="updateTermDate(${idx},'Agreement Effective Date',this.value)" title="Contract start — adjusts the future schedule for recurring agreements">
         </div>
         <div class="info-row">
           <span class="info-label">Expires</span>
-          <input class="editable-field" value="${esc(r['Agreement Expiration Date']||'')}" onchange="updateTermDate(${idx},'Agreement Expiration Date',this.value)" title="Contract end — extends or trims the future schedule for recurring agreements">
+          <input class="editable-field" value="${esc(r['Agreement Expiration Date']||'')}" ${lkIn} onchange="updateTermDate(${idx},'Agreement Expiration Date',this.value)" title="Contract end — extends or trims the future schedule for recurring agreements">
         </div>
         <div class="info-row" style="align-items:center;gap:6px;">
           <span class="info-label">Payment Terms</span>
-          <select class="editable-field" style="flex:1;" onchange="updateTermField(${idx},'Payment Terms',this.value)">
+          <select class="editable-field" style="flex:1;" ${lkSel} onchange="updateTermField(${idx},'Payment Terms',this.value)">
             ${_optionList(PAYMENT_TERM_OPTIONS, r['Payment Terms'])}
           </select>
         </div>
         <div class="info-row" style="align-items:center;gap:6px;">
           <span class="info-label">Billing Freq.</span>
-          <select class="editable-field" style="flex:1;" onchange="changeBillingFrequency(${idx},this.value)">
+          <select class="editable-field" style="flex:1;" ${lkSel} onchange="changeBillingFrequency(${idx},this.value)">
             ${_optionList(BILLING_FREQ_OPTIONS, r['Billing Frequency'])}
           </select>
         </div>
         <div class="info-row">
           <span class="info-label">${(()=>{const f=r['Billing Frequency']||'Monthly';const lbl={'Monthly':'Monthly Charge','Quarterly':'Quarterly Charge','Semi-Annual':'Semi-Annual Charge','Annual':'Annual Charge','Custom':'Default Amount','T&M':'T&M Rate','One-Time':'One-Time Amount'};return lbl[f]||'Billing Charge';})()}</span>
-          <input class="editable-field" value="${esc(r['Monthly Billing Charge']||'')}" onchange="changeBillingCharge(${idx},this.value)" title="Click to edit">
+          <input class="editable-field" value="${esc(r['Monthly Billing Charge']||'')}" ${lkIn} onchange="changeBillingCharge(${idx},this.value)" title="${lkTitle}">
         </div>
         ${(r['Billing Frequency']==='Custom' || accountHasCustomSchedule(r)) ? customScheduleEditorHTML(r, idx) : ''}
       </div>
@@ -2616,11 +4120,11 @@ function renderDetailTab() {
       <div class="cards-row" style="margin-top:8px;">
         <div class="info-card" style="flex:1.2;">
           <h3 style="font-size:0.78rem;color:#555;text-transform:uppercase;letter-spacing:.04em;">A/P Contact</h3>
-          ${editField('AP Contact Name','Name',r['AP Contact Name'])}
-          ${editField('AP Contact Title','Title',r['AP Contact Title'])}
+          ${editField('AP Contact Name','Name',r['AP Contact Name'],false)}
+          ${editField('AP Contact Title','Title',r['AP Contact Title'],false)}
           ${multiEmailField('AP Contact Email','Email(s)',r['AP Contact Email'])}
           ${multiEmailField('AP Contact CC','CC Email(s)',r['AP Contact CC'])}
-          ${editField('AP Contact Phone','Phone',r['AP Contact Phone'])}
+          ${editField('AP Contact Phone','Phone',r['AP Contact Phone'],false)}
         </div>
         <div class="info-card" style="flex:1.2;">
           <h3 style="font-size:0.78rem;color:#555;text-transform:uppercase;letter-spacing:.04em;">Invoice Delivery Method</h3>
@@ -2630,8 +4134,8 @@ function renderDetailTab() {
               ${['','Email to A/P Contact','Submit via A/P Portal','Mail (physical)','Email to Billing Address','Other'].map(opt=>`<option value="${opt}" ${(r['AP Delivery Method']||'')==opt?'selected':''}>${opt||'— select —'}</option>`).join('')}
             </select>
           </div>
-          ${editField('AP Portal Name','Portal Name',r['AP Portal Name'])}
-          ${editField('AP Portal URL','Portal URL',r['AP Portal URL'])}
+          ${editField('AP Portal Name','Portal Name',r['AP Portal Name'],false)}
+          ${editField('AP Portal URL','Portal URL',r['AP Portal URL'],false)}
           ${textareaField('AP Delivery Notes','Delivery Notes',r['AP Delivery Notes'])}
         </div>
         <div class="info-card" style="flex:1.2;">
@@ -2725,6 +4229,10 @@ function updateField(idx, field, val) {
 // invoice when it's generated (future / unbilled included).
 function toggleServicesEdit(){
   servicesEditMode = !servicesEditMode;
+  if(selectedIdx!==null) renderDetail(DB[selectedIdx]);
+}
+function toggleDetailsLock(){
+  detailsLocked = !detailsLocked;
   if(selectedIdx!==null) renderDetail(DB[selectedIdx]);
 }
 function toggleService(svcIndex){
