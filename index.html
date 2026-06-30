@@ -6248,7 +6248,7 @@ init();
 /* ════════════════════════════════════════════════════════════════════════
    Batch Billing Import
    Reads a billing run (xlsx), matches each row to a scheduled CRM invoice by
-   Agreement # (parsed from "Agreement Billing Desc") + GL Month, then stamps
+   Agreement # (parsed from "Agreement Billing Desc") + Invoice Date, then stamps
    the Invoice # and marks the group billed. Shows a preview before committing.
    ════════════════════════════════════════════════════════════════════════ */
 function openBatchImport(){
@@ -6278,19 +6278,37 @@ function handleBatchBillingFile(e){
   reader.readAsArrayBuffer(file);
 }
 
-// Pull GL month → 'YYYY-MM' month key + 'M/1/YYYY' date string.
-function _glToMonth(glRaw, descRaw){
-  let mm, yy;
-  const s = String(glRaw==null?'':glRaw).trim();
-  let mt = s.match(/(\d{1,2})\s*\/\s*(\d{2,4})/);
-  if(mt){ mm = parseInt(mt[1],10); yy = parseInt(mt[2],10); }
-  else {
-    const dm = String(descRaw||'').match(/for\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
-    if(dm){ mm = parseInt(dm[1],10); yy = parseInt(dm[3],10); }
+// Coerce any cell (Date object, Excel serial number, "M/D/YY", or "M/YY") into
+// {y,m,d}. Returns null when nothing date-like is present.
+function _anyToYMD(v){
+  if(v==null || v==='') return null;
+  if(v instanceof Date && !isNaN(v)) return { y:v.getFullYear(), m:v.getMonth()+1, d:v.getDate() };
+  if(typeof v === 'number' && isFinite(v) && XLSX.SSF && XLSX.SSF.parse_date_code){
+    const dt = XLSX.SSF.parse_date_code(v);
+    if(dt && dt.y) return { y:dt.y, m:dt.m, d:dt.d };
   }
-  if(!mm) return { monthKey:'', dateStr:'' };
-  if(yy < 100) yy = 2000 + yy;
-  return { monthKey: yy + '-' + String(mm).padStart(2,'0'), dateStr: mm + '/1/' + yy };
+  const s = String(v).trim();
+  let mt = s.match(/(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{2,4})/);   // M/D/Y
+  if(mt){ let y=parseInt(mt[3],10); if(y<100) y+=2000; return { y, m:parseInt(mt[1],10), d:parseInt(mt[2],10) }; }
+  mt = s.match(/(\d{1,2})\s*\/\s*(\d{2,4})/);                         // M/Y (GL month)
+  if(mt){ let y=parseInt(mt[2],10); if(y<100) y+=2000; return { y, m:parseInt(mt[1],10), d:1 }; }
+  return null;
+}
+
+// Resolve the billing date for a row → 'YYYY-MM' month key + 'M/D/YYYY' strings.
+// Priority: the Invoice Date column, then the "for MM/DD/YY" inside the
+// Agreement Billing Desc, then GL Month (the accounting period, used last
+// because it can lag the actual service date).
+function _rowToMonth(invDateRaw, descRaw, glRaw){
+  let ymd = _anyToYMD(invDateRaw);
+  if(!ymd){
+    const dm = String(descRaw||'').match(/for\s+(\d{1,2})\/(\d{1,2})\/(\d{2,4})/i);
+    if(dm){ let y=parseInt(dm[3],10); if(y<100) y+=2000; ymd = { y, m:parseInt(dm[1],10), d:parseInt(dm[2],10) }; }
+  }
+  if(!ymd) ymd = _anyToYMD(glRaw);
+  if(!ymd) return { monthKey:'', dateStr:'', dateDisp:'' };
+  const ds = ymd.m + '/' + ymd.d + '/' + ymd.y;
+  return { monthKey: ymd.y + '-' + String(ymd.m).padStart(2,'0'), dateStr: ds, dateDisp: ds };
 }
 
 // Parse the workbook into normalized rows. Column lookup is by header name
@@ -6304,11 +6322,12 @@ function parseBatchRows(wb){
   const hdr = (aoa[0]||[]).map(h => String(h==null?'':h).trim());
   const col = name => hdr.findIndex(h => h.toLowerCase() === name.toLowerCase());
   const ci = {
-    desc:  col('Agreement Billing Desc'),
-    inv:   col('Invoice'),
-    gl:    col('GL Month'),
-    total: col('Invoice Total'),
-    bill:  col('BillName')
+    desc:    col('Agreement Billing Desc'),
+    inv:     col('Invoice'),
+    invDate: col('Invoice Date'),
+    gl:      col('GL Month'),
+    total:   col('Invoice Total'),
+    bill:    col('BillName')
   };
   if(ci.desc < 0 || ci.inv < 0)
     return { rows:[], err:'Missing a required column: "Agreement Billing Desc" and/or "Invoice".' };
@@ -6319,14 +6338,16 @@ function parseBatchRows(wb){
     if(!descRaw) continue;
     const m = descRaw.match(/Agreement\s+(\d+)/i);
     if(!m) continue;                                   // skip non-agreement rows
-    const agr     = m[1];
-    const invNum  = String(r[ci.inv]==null?'':r[ci.inv]).trim();
-    const glRaw   = ci.gl   >= 0 ? r[ci.gl]   : '';
-    const totalRaw= ci.total>= 0 ? r[ci.total]: '';
-    const total   = parseFloat(String(totalRaw==null?'':totalRaw).replace(/[$,]/g,'')) || 0;
-    const billName= ci.bill >= 0 ? String(r[ci.bill]==null?'':r[ci.bill]).trim() : '';
-    const { monthKey, dateStr } = _glToMonth(glRaw, descRaw);
-    rows.push({ agr, invNum, glRaw:String(glRaw==null?'':glRaw).trim(), total, billName, monthKey, dateStr });
+    const agr      = m[1];
+    const invNum   = String(r[ci.inv]==null?'':r[ci.inv]).trim();
+    const invDateRaw = ci.invDate >= 0 ? r[ci.invDate] : '';
+    const glRaw    = ci.gl   >= 0 ? r[ci.gl]   : '';
+    const totalRaw = ci.total>= 0 ? r[ci.total]: '';
+    const total    = parseFloat(String(totalRaw==null?'':totalRaw).replace(/[$,]/g,'')) || 0;
+    const billName = ci.bill >= 0 ? String(r[ci.bill]==null?'':r[ci.bill]).trim() : '';
+    const { monthKey, dateStr, dateDisp } = _rowToMonth(invDateRaw, descRaw, glRaw);
+    rows.push({ agr, invNum, invDateRaw:String(invDateRaw==null?'':invDateRaw).trim(),
+                glRaw:String(glRaw==null?'':glRaw).trim(), total, billName, monthKey, dateStr, dateDisp });
   }
   return { rows, err:null };
 }
@@ -6400,7 +6421,7 @@ function renderBatchPreview(){
       + '<td style="text-align:center;">'+chk+'</td>'
       + '<td><b>#'+esc(p.agr)+'</b></td>'
       + '<td>'+esc(p.account||p.billName||'')+'</td>'
-      + '<td style="white-space:nowrap;">'+esc(p.glRaw||'')+'</td>'
+      + '<td style="white-space:nowrap;">'+esc(p.dateDisp||p.invDateRaw||p.glRaw||'')+'</td>'
       + '<td style="white-space:nowrap;">'+esc(p.invNum||'')+'</td>'
       + '<td style="white-space:nowrap;">'+fmt(p.total)+'</td>'
       + '<td>'+badge(p)+'</td>'
@@ -6420,7 +6441,7 @@ function renderBatchPreview(){
     +   '<button onclick="batchSelectAll(false)" style="font-size:0.74rem;border:1px solid var(--gray3);background:#fff;border-radius:5px;padding:3px 9px;cursor:pointer;">Clear all</button>'
     + '</div>'
     + '<table class="bb"><thead><tr>'
-    +   '<th></th><th>Agr</th><th>Account</th><th>GL Month</th><th>File Inv#</th><th>File Amt</th><th>CRM Status</th>'
+    +   '<th></th><th>Agr</th><th>Account</th><th>Inv Date</th><th>File Inv#</th><th>File Amt</th><th>CRM Status</th>'
     + '</tr></thead><tbody>'+rowsHTML+'</tbody></table>'
     + '<div style="font-size:0.72rem;color:#888;margin-top:10px;">Checked rows get their invoice&nbsp;# stamped and are marked <b>billed</b>. “Will create” rows have no scheduled invoice for that month — checking them adds a new billed invoice on the agreement’s primary site. Unmatched and already-billed rows are skipped.</div>';
   document.getElementById('bb-apply').style.display = '';
