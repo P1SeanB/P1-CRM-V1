@@ -71,7 +71,20 @@ async function saveAllToCloud(){
     await sb.from('accounts').delete().neq('id',0);
     if(DB.length){ const rows=DB.map(_accountRow); for(let i=0;i<rows.length;i+=500) await sb.from('accounts').insert(rows.slice(i,i+500)); }
     await sb.from('invoices').delete().neq('id',0);
-    const invRows=[]; Object.keys(invoiceDB).forEach(k=>(invoiceDB[k]||[]).forEach(inv=>invRows.push(_invoiceRow(k,inv))));
+    // Safeguard: write at most one copy of each invoice per stream. A past
+    // double-insert duplicated the whole table; de-duping here at the single
+    // persistence choke point means it can never be re-introduced, even if a
+    // stale in-memory session saves before a Refresh from Cloud.
+    const invRows=[];
+    Object.keys(invoiceDB).forEach(k=>{
+      const seen=new Set();
+      (invoiceDB[k]||[]).forEach(inv=>{
+        const sig=JSON.stringify(inv);
+        if(seen.has(sig)) return;
+        seen.add(sig);
+        invRows.push(_invoiceRow(k,inv));
+      });
+    });
     for(let i=0;i<invRows.length;i+=500) await sb.from('invoices').insert(invRows.slice(i,i+500));
     if(typeof showNotice==='function') showNotice('✓ Saved to cloud');
   }catch(err){ console.error(err); alert('Cloud save failed: '+err.message); }
