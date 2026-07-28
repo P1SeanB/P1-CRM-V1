@@ -36,15 +36,17 @@ function _date(v){ if(!v) return null; const p=String(v).split('/'); if(p.length
 function _accountRow(r){ return { account_key:makeKey(r), agreement_num:String(r['Agreement#']??''), cs_account:String(r['Central Station Account#']??''), customer_name:r['Customer Name']||null, account_name:r['Account Name']||null, system_type:r['System Type']||null, site_type:r['Site Type']||null, agreement_status:r['Agreement Status']||null, billing_frequency:r['Billing Frequency']||null, monthly_charge:_num(r['Monthly Billing Charge']), effective_date:_date(r['Agreement Effective Date']), expiration_date:_date(r['Agreement Expiration Date']), data:r }; }
 function _invoiceRow(key,inv){ return { account_key:key, inv_num:String(inv.invNum||''), inv_date:_date(inv.date), amount:_num(inv.amount), period:inv.period||null, billed:!!inv.billed, data:inv }; }
 
+let currentUserEmail = '';
 async function ensureSignedIn(){
   if(!sb){ return false; }   // config alert already shown
   const { data:{ session } } = await sb.auth.getSession();
-  if(session) return true;
+  if(session){ try{ const { data:{ user } } = await sb.auth.getUser(); if(user && user.email) currentUserEmail = user.email; }catch(e){} return true; }
   const email = prompt('P1 CRM — sign in\n\nEmail:');
   const pass  = email ? prompt('Password:') : null;
   if(!email || !pass) return false;
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   if(error){ alert('Login failed: '+error.message); return false; }
+  currentUserEmail = email || currentUserEmail;
   return true;
 }
 
@@ -364,7 +366,7 @@ table.inv-list tr.unbilled:hover td { background: #fff5d6; }
 .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
 
 /* RENEWAL MODAL */
-#renewal-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 1100; overflow-y: auto; padding: 30px 20px; }
+#renewal-modal, #terminate-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 1100; overflow-y: auto; padding: 30px 20px; }
 .renewal-box { background: white; max-width: 680px; margin: 0 auto; border-radius: 10px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.25); }
 .renewal-header { background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%); color: white; padding: 18px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--accent); }
 .renewal-header h2 { font-size: 1rem; font-weight: 700; }
@@ -591,6 +593,42 @@ table.inv-list tr.unbilled:hover td { background: #fff5d6; }
     <div class="renewal-footer">
       <button class="btn btn-primary" onclick="applyRenewal()">✅ Apply Renewal &amp; Add to Schedule</button>
       <button class="btn btn-outline" onclick="closeRenewal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Terminate / Reactivate Agreement Modal -->
+<div id="terminate-modal">
+  <div class="renewal-box">
+    <div class="renewal-header">
+      <div>
+        <h2 id="term-modal-title">🛑 Terminate Agreement</h2>
+        <p id="terminate-acct-name" style="font-size:0.75rem;color:var(--gray3);margin-top:2px;">—</p>
+      </div>
+      <button onclick="closeTerminate()" style="background:rgba(255,255,255,0.15);border:none;color:white;font-size:1.1rem;cursor:pointer;padding:4px 10px;border-radius:5px;">✕</button>
+    </div>
+    <div class="renewal-body">
+      <div class="renewal-section">
+        <h3 id="term-date-fieldlabel">Effective Termination Date</h3>
+        <div class="renewal-grid">
+          <div class="renewal-field">
+            <label>Date</label>
+            <input type="date" id="term-date">
+          </div>
+        </div>
+      </div>
+      <div class="renewal-section">
+        <h3>Reason / Note</h3>
+        <textarea id="term-reason" rows="3" style="width:100%;box-sizing:border-box;padding:8px;border:1.5px solid var(--gray3);border-radius:6px;font-size:0.83rem;font-family:inherit;" placeholder="Reason for termination (required)"></textarea>
+      </div>
+      <div class="renewal-section">
+        <h3>What will happen</h3>
+        <div id="term-impact" style="font-size:0.82rem;color:var(--text);line-height:1.7;background:var(--gray1);border-radius:6px;padding:10px 12px;"></div>
+      </div>
+    </div>
+    <div class="renewal-footer">
+      <button class="btn btn-primary" id="term-apply-btn" style="background:#b91c1c;" onclick="applyStatusChange()">🛑 Terminate Agreement</button>
+      <button class="btn btn-outline" onclick="closeTerminate()">Cancel</button>
     </div>
   </div>
 </div>
@@ -4180,6 +4218,27 @@ function renderDetailTab() {
           <span class="info-label">${(()=>{const f=r['Billing Frequency']||'Monthly';const lbl={'Monthly':'Monthly Charge','Quarterly':'Quarterly Charge','Semi-Annual':'Semi-Annual Charge','Annual':'Annual Charge','Custom':'Default Amount','T&M':'T&M Rate','One-Time':'One-Time Amount'};return lbl[f]||'Billing Charge';})()}</span>
           <input class="editable-field" value="${esc(r['Monthly Billing Charge']||'')}" ${lkIn} onchange="changeBillingCharge(${idx},this.value)" title="${lkTitle}">
         </div>
+        ${(function(){
+          const st=(r['Agreement Status']||'').trim();
+          let out='';
+          if(!LK){
+            if(st==='Terminated'){
+              out+=`<div class="info-row" style="margin-top:8px;"><button class="btn-sm" style="background:#15803d;color:#fff;font-weight:600;width:100%;padding:7px;border:none;border-radius:6px;cursor:pointer;" onclick="openReactivate()">✅ Reactivate Agreement</button></div>`;
+            } else {
+              out+=`<div class="info-row" style="margin-top:8px;"><button class="btn-sm" style="background:#b91c1c;color:#fff;font-weight:600;width:100%;padding:7px;border:none;border-radius:6px;cursor:pointer;" onclick="openTerminate()">🛑 Terminate Agreement</button></div>`;
+            }
+          }
+          if(st==='Terminated' && r['Agreement Termination Date']){
+            out+=`<div class="info-row"><span class="info-label">Terminated</span><span class="info-value">${esc(r['Agreement Termination Date'])}</span></div>`;
+            if(r['Agreement Original Expiration Date']) out+=`<div class="info-row"><span class="info-label">Original End</span><span class="info-value">${esc(r['Agreement Original Expiration Date'])}</span></div>`;
+          }
+          if(Array.isArray(r['Status History']) && r['Status History'].length){
+            out+=`<div class="info-row" style="flex-direction:column;align-items:stretch;gap:2px;margin-top:6px;"><span class="info-label" style="font-size:0.62rem;text-transform:uppercase;letter-spacing:0.4px;color:var(--gray4);">Status History</span>`+
+              r['Status History'].slice(-4).reverse().map(function(h){ return `<div style="font-size:0.66rem;color:var(--gray4);line-height:1.35;">${esc(h.action||h.to||'')} • ${esc(h.effectiveDate||'')} • ${esc((h.by||'').split('@')[0])}${h.reason?' • '+esc(h.reason):''}</div>`; }).join('')+
+            `</div>`;
+          }
+          return out;
+        })()}
         ${(r['Billing Frequency']==='Custom' || accountHasCustomSchedule(r)) ? customScheduleEditorHTML(r, idx) : ''}
       </div>
       <div class="info-card">
@@ -4304,7 +4363,7 @@ async function deleteAgreement() {
   if (!pass) return;
 
   let email = '';
-  try { const { data:{ user } } = await sb.auth.getUser(); email = user && user.email; } catch(e){}
+  try { const { data:{ user } } = await sb.auth.getUser(); email = user && user.email; if(email) currentUserEmail=email; } catch(e){}
   if (!email) { alert('Could not verify your session. Reload, sign in, and try again.'); return; }
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { alert('Incorrect password — the agreement was NOT deleted.'); return; }
@@ -5820,6 +5879,121 @@ function applyRenewal() {
   showNotice(`✓ Renewal applied — ${added} invoice${added!==1?'s':''} added${skipped?' ('+skipped+' skipped)':''}`);
 }
 
+// ── Agreement status change: Terminate / Reactivate ──
+function _isoToMDY(s){ if(!s) return ''; const p=String(s).split('-'); if(p.length!==3) return s; return parseInt(p[1],10)+'/'+parseInt(p[2],10)+'/'+p[0]; }
+function _terminationImpact(r){
+  const agr=String(r['Agreement#']);
+  const lb=latestBilledInvoice(r); const lbDate=lb?parseDate(lb.date):null;
+  let stop=0, billed=0;
+  DB.forEach(function(sr){
+    if(String(sr['Agreement#'])!==agr) return;
+    (invoiceDB[makeKey(sr)]||[]).forEach(function(inv){
+      if(inv.billed){ billed++; return; }
+      const d=parseDate(inv.date);
+      if(!lbDate || d>lbDate) stop++;
+    });
+  });
+  return { stop:stop, billed:billed };
+}
+let _statusMode='terminate';
+function openTerminate(){ _openStatusModal('terminate'); }
+function openReactivate(){ _openStatusModal('reactivate'); }
+function _openStatusModal(mode){
+  if(selectedIdx===null) return;
+  if(detailsLocked){ alert('Unlock the account panel first (click "🔓 Unlock to Edit") to change agreement status.'); return; }
+  _statusMode=mode;
+  const r=DB[selectedIdx];
+  document.getElementById('terminate-acct-name').textContent=(r['Account Name']||'')+' — Agr #'+r['Agreement#'];
+  document.getElementById('term-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('term-reason').value='';
+  const hdr=document.querySelector('#terminate-modal .renewal-header');
+  const btn=document.getElementById('term-apply-btn');
+  if(mode==='reactivate'){
+    document.getElementById('term-modal-title').textContent='✅ Reactivate Agreement';
+    document.getElementById('term-date-fieldlabel').textContent='Reactivation Date';
+    document.getElementById('term-reason').placeholder='Note (optional)';
+    btn.textContent='✅ Reactivate Agreement'; btn.style.background='#15803d';
+    if(hdr) hdr.style.background='linear-gradient(135deg,#14532d 0%,#15803d 100%)';
+    const origExp=r['Agreement Original Expiration Date']||r['Agreement Expiration Date']||'—';
+    document.getElementById('term-impact').innerHTML=
+      '• Status returns to <b>Active</b>.<br>'+
+      '• Original end date restored: <b>'+esc(origExp)+'</b>.<br>'+
+      '• Future invoices are regenerated from after the last billed invoice — billed invoices are never recreated or duplicated.';
+  } else {
+    document.getElementById('term-modal-title').textContent='🛑 Terminate Agreement';
+    document.getElementById('term-date-fieldlabel').textContent='Effective Termination Date';
+    document.getElementById('term-reason').placeholder='Reason for termination (required)';
+    btn.textContent='🛑 Terminate Agreement'; btn.style.background='#b91c1c';
+    if(hdr) hdr.style.background='linear-gradient(135deg,#7f1d1d 0%,#b91c1c 100%)';
+    const im=_terminationImpact(r);
+    document.getElementById('term-impact').innerHTML=
+      '• <b>'+im.stop+'</b> scheduled (unbilled) invoice'+(im.stop!==1?'s':'')+' after the last billed invoice will be stopped.<br>'+
+      '• <b>'+im.billed+'</b> billed invoice'+(im.billed!==1?'s':'')+' will be kept unchanged.<br>'+
+      '• Status → <b>Terminated</b>; effective end date is set to the termination date (original end date is preserved).';
+  }
+  document.getElementById('terminate-modal').style.display='block';
+}
+function closeTerminate(){ document.getElementById('terminate-modal').style.display='none'; }
+function applyStatusChange(){ if(_statusMode==='reactivate') applyReactivation(); else applyTermination(); }
+function applyTermination(){
+  const idx=selectedIdx; if(idx===null) return;
+  const r=DB[idx]; const agr=String(r['Agreement#']);
+  const iso=document.getElementById('term-date').value;
+  if(!iso){ alert('Please enter an effective termination date.'); return; }
+  const termDate=_isoToMDY(iso);
+  const reason=(document.getElementById('term-reason').value||'').trim();
+  if(!reason){ alert('Please enter a reason for termination.'); return; }
+  const lb=latestBilledInvoice(r); const lbDate=lb?parseDate(lb.date):null;
+  let stopped=0;
+  DB.forEach(function(sr){
+    if(String(sr['Agreement#'])!==agr) return;
+    const k=makeKey(sr);
+    invoiceDB[k]=(invoiceDB[k]||[]).filter(function(inv){
+      if(inv.billed) return true;
+      const d=parseDate(inv.date);
+      if(!lbDate || d>lbDate){ stopped++; return false; }
+      return true;
+    });
+  });
+  const prev=(r['Agreement Status']||'Active');
+  const entry={ action:'Terminated', from:prev, to:'Terminated', effectiveDate:termDate, reason:reason, by:(currentUserEmail||'unknown'), at:new Date().toISOString() };
+  DB.forEach(function(sr){
+    if(String(sr['Agreement#'])!==agr) return;
+    if(!sr['Agreement Original Expiration Date'] && sr['Agreement Expiration Date']) sr['Agreement Original Expiration Date']=sr['Agreement Expiration Date'];
+    sr['Agreement Termination Date']=termDate;
+    sr['Agreement Expiration Date']=termDate;
+    sr['Agreement Status']='Terminated';
+    sr['Status History']=(Array.isArray(sr['Status History'])?sr['Status History']:[]).concat([entry]);
+  });
+  recomputeLastInvoice(r);
+  saveData(); renderList(); closeTerminate();
+  activeTab='invoices'; renderDetail(DB[idx]);
+  showNotice('🛑 Agreement terminated — '+stopped+' scheduled invoice'+(stopped!==1?'s':'')+' stopped, billed history kept');
+}
+function applyReactivation(){
+  const idx=selectedIdx; if(idx===null) return;
+  const r=DB[idx]; const agr=String(r['Agreement#']);
+  const iso=document.getElementById('term-date').value;
+  const reactDate=iso?_isoToMDY(iso):_isoToMDY(new Date().toISOString().split('T')[0]);
+  const note=(document.getElementById('term-reason').value||'').trim();
+  const prev=(r['Agreement Status']||'Terminated');
+  const entry={ action:'Reactivated', from:prev, to:'Active', effectiveDate:reactDate, reason:note, by:(currentUserEmail||'unknown'), at:new Date().toISOString() };
+  DB.forEach(function(sr){
+    if(String(sr['Agreement#'])!==agr) return;
+    if(sr['Agreement Original Expiration Date']) sr['Agreement Expiration Date']=sr['Agreement Original Expiration Date'];
+    sr['Agreement Termination Date']='';
+    sr['Agreement Status']='Active';
+    sr['Status History']=(Array.isArray(sr['Status History'])?sr['Status History']:[]).concat([entry]);
+  });
+  const primaryIdx=DB.findIndex(function(sr){ return String(sr['Agreement#'])===agr; });
+  let added=0;
+  if(primaryIdx>=0) added=regenRecurringSchedule(primaryIdx);
+  recomputeLastInvoice(r);
+  saveData(); renderList(); closeTerminate();
+  activeTab='invoices'; renderDetail(DB[idx]);
+  showNotice('✅ Agreement reactivated — '+added+' future invoice'+(added!==1?'s':'')+' regenerated, billed history kept');
+}
+
 function closeInvoice() { document.getElementById('invoice-preview').style.display='none'; }
 
 // ════════════════════════════════════════════════════════════════════════
@@ -5891,6 +6065,7 @@ function _scheduleStartCursor(r, key){
 function regenRecurringSchedule(idx){
   const r = DB[idx]; const key = makeKey(r);
   invoiceDB[key] = (invoiceDB[key]||[]).filter(inv => !_isRebuildable(inv)); // keep billed + touched + manual
+  if((r['Agreement Status']||'').trim()==='Terminated') return 0; // terminated agreements carry no future schedule
   const interval = RECURRING_INTERVAL[(r['Billing Frequency']||'').trim()];
   if(!interval) return 0;                 // T&M / One-Time / blank → nothing recurring
   const charge = _chargeNum(r); if(charge<=0) return 0;
