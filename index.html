@@ -7066,10 +7066,19 @@ async function doExportInvoices(){
       var m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
       return m ? new Date(+m[3], +m[1] - 1, +m[2]) : null;
     }
+    function money(v) { if (v == null) return 0; var n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; }
+    // Active agreements use the app's normalized monthly RMR (matches the header,
+    // normalizes Annual/Quarterly/etc.). Terminated/other agreements aren't recurring
+    // revenue, so agreementMonthlyRMR() returns 0 for them; for those we instead show
+    // the account's own monthly charge, so a Terminated total equals the sum you'd get
+    // adding up those accounts in the list.
     function rmrOf(a) {
-      if (!hasRMR) return 0;
-      var v = window.agreementMonthlyRMR(a['Agreement#']);
-      return (typeof v === 'number' && isFinite(v)) ? v : 0;
+      var status = String(a['Agreement Status'] || '').toLowerCase();
+      if (status === 'active' && hasRMR) {
+        var v = window.agreementMonthlyRMR(a['Agreement#']);
+        if (typeof v === 'number' && isFinite(v)) return v;
+      }
+      return money(a['Monthly Billing Charge']);
     }
     function fmtMoney(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
 
