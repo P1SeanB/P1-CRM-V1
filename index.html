@@ -6994,5 +6994,207 @@ async function doExportInvoices(){
 }
 </script>
 
+<!-- =========================================================
+     P1 CRM - Live filter-chip counts + Expiring/Overdue filters
+     Paste this ENTIRE block immediately before the closing </body>
+     tag in index.html. Purely additive: it does NOT change your
+     existing chip HTML, setFilter(), getFiltered() or renderList().
+
+     - Adds a live "(count)" to every chip: All, Active, Terminated,
+       Fire, Burglar, Access.
+     - Adds four new chips:
+         Exp <=90d, Exp <=60d, Exp <=30d  (amber) = ACTIVE agreements
+             expiring within the next N days (measured from today).
+         Overdue                          (red)   = ACTIVE agreements
+             already past their expiration date.
+       Clicking any of them filters the list to just those agreements.
+
+     Counts recompute automatically whenever the account list
+     re-renders (Load, Refresh from Cloud, Save, generate invoices,
+     terminate/reactivate, etc.).
+     ============================================================ -->
+<script>
+(function () {
+  var BAR = '#filter-bar', LIST = '#account-list';
+
+  // chip key -> label + style class
+  var EXTRA_CHIPS = [
+    { key: 'exp90', label: 'Exp ≤90d', cls: 'exp' },
+    { key: 'exp60', label: 'Exp ≤60d', cls: 'exp' },
+    { key: 'exp30', label: 'Exp ≤30d', cls: 'exp' },
+    { key: 'expOverdue', label: 'Overdue', cls: 'exp overdue' }
+  ];
+  // predicate per bucket, given days-until-expiration (negative = past due)
+  var BUCKETS = {
+    exp90: function (days) { return days >= 0 && days <= 90; },
+    exp60: function (days) { return days >= 0 && days <= 60; },
+    exp30: function (days) { return days >= 0 && days <= 30; },
+    expOverdue: function (days) { return days < 0; }
+  };
+  var BUCKET_KEYS = Object.keys(BUCKETS);
+
+  function ready() {
+    return document.querySelector(BAR) && document.querySelector(LIST) &&
+           typeof window.setFilter === 'function' && typeof window.getFiltered === 'function';
+  }
+
+  function boot() {
+    if (!ready()) { return setTimeout(boot, 300); }
+    var bar = document.querySelector(BAR), list = document.querySelector(LIST);
+    var mo = null, busy = false, expState = null, t = null, lastStats = null;
+
+    if (!document.getElementById('chipCountStyle')) {
+      var st = document.createElement('style'); st.id = 'chipCountStyle';
+      st.textContent =
+        '.filter-chip .chip-count{opacity:.7;font-weight:600;margin-left:2px;font-size:.9em;}' +
+        '.filter-chip.exp{border-color:#e0a800;color:#8a6d00;}' +
+        '.filter-chip.exp:hover{border-color:#c69500;color:#c69500;}' +
+        '.filter-chip.exp.active{background:#e0a800;border-color:#e0a800;color:#fff;}' +
+        '.filter-chip.overdue{border-color:#dc3545;color:#a71d2a;}' +
+        '.filter-chip.overdue:hover{border-color:#c82333;color:#c82333;}' +
+        '.filter-chip.overdue.active{background:#dc3545;border-color:#dc3545;color:#fff;}';
+      document.head.appendChild(st);
+    }
+
+    function chipEl(f) { return bar.querySelector('.filter-chip[data-filter="' + f + '"]'); }
+    function labelOf(chip) {
+      var l = chip.getAttribute('data-label');
+      if (l == null) { l = chip.textContent.replace(/\s*\(\d+\)\s*$/, '').trim(); chip.setAttribute('data-label', l); }
+      return l;
+    }
+    function parseD(s) {
+      if (!s) return null;
+      var m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      return m ? new Date(+m[3], +m[1] - 1, +m[2]) : null;
+    }
+
+    // add the extra chips once
+    if (!chipEl('exp90')) {
+      EXTRA_CHIPS.forEach(function (c) {
+        var el = document.createElement('span');
+        el.className = 'filter-chip ' + c.cls;
+        el.setAttribute('data-filter', c.key);
+        el.setAttribute('data-label', c.label);
+        el.textContent = c.label;
+        el.addEventListener('click', function () { applyExp(c.key); });
+        bar.appendChild(el);
+      });
+    }
+    // clicking any native chip clears the Exp/Overdue state + active styling
+    [].forEach.call(bar.querySelectorAll('.filter-chip:not(.exp)'), function (chip) {
+      chip.addEventListener('click', function () {
+        expState = null;
+        [].forEach.call(bar.querySelectorAll('.filter-chip.exp'), function (c) { c.classList.remove('active'); });
+      }, true);
+    });
+
+    function emptySets() { var o = {}; BUCKET_KEYS.forEach(function (k) { o[k] = {}; }); return o; }
+    function emptyCounts() { var o = {}; BUCKET_KEYS.forEach(function (k) { o[k] = 0; }); return o; }
+
+    // full-dataset stats (caller must have getFiltered() returning the full set, i.e. filter = all)
+    function computeStats() {
+      var rows = window.getFiltered(), seen = {}, uniq = [];
+      rows.forEach(function (a) { var n = a['Agreement#']; if (n != null && !seen[n]) { seen[n] = 1; uniq.push(a); } });
+      var today = new Date(); today.setHours(0, 0, 0, 0);
+      var s = { all: uniq.length, Active: 0, Terminated: 0, Fire: 0, Burglar: 0, Access: 0,
+                sets: emptySets(), counts: emptyCounts() };
+      uniq.forEach(function (a) {
+        var status = String(a['Agreement Status'] || '').toLowerCase();
+        if (status === 'active') s.Active++; else if (status === 'terminated') s.Terminated++;
+        var sys = a['System Type'];
+        if (sys === 'Fire') s.Fire++; else if (sys === 'Burglar') s.Burglar++; else if (sys === 'Access') s.Access++;
+        if (status !== 'active') return;
+        var d = parseD(a['Agreement Expiration Date']); if (!d) return;
+        var days = Math.floor((d - today) / 86400000), num = a['Agreement#'];
+        BUCKET_KEYS.forEach(function (k) { if (BUCKETS[k](days)) { s.sets[k][num] = 1; s.counts[k]++; } });
+      });
+      return s;
+    }
+
+    // expiring id-sets when getFiltered() currently returns the Active subset
+    function computeSetsUnderActive() {
+      var rows = window.getFiltered(), seen = {}, today = new Date(); today.setHours(0, 0, 0, 0);
+      var sets = emptySets();
+      rows.forEach(function (a) {
+        var num = a['Agreement#']; if (num == null || seen[num]) return; seen[num] = 1;
+        if (String(a['Agreement Status'] || '').toLowerCase() !== 'active') return;
+        var d = parseD(a['Agreement Expiration Date']); if (!d) return;
+        var days = Math.floor((d - today) / 86400000);
+        BUCKET_KEYS.forEach(function (k) { if (BUCKETS[k](days)) sets[k][num] = 1; });
+      });
+      return sets;
+    }
+
+    function hideNonMatching(set) {
+      [].forEach.call(document.querySelectorAll(LIST + ' .acct-item'), function (it) {
+        var m = (it.textContent || '').match(/#(\d+)/); var num = m ? +m[1] : null;
+        it.style.display = (num != null && set[num]) ? '' : 'none';
+      });
+    }
+    function setActiveChip(key) {
+      [].forEach.call(bar.querySelectorAll('.filter-chip'), function (c) { c.classList.remove('active'); });
+      var chip = chipEl(key); if (chip) chip.classList.add('active');
+    }
+
+    // click an extra chip -> show Active list, then keep only matching agreements
+    function applyExp(key) {
+      expState = key;
+      busy = true; if (mo) mo.disconnect();
+      try {
+        window.setFilter('Active', chipEl('Active'));
+        var sets = computeSetsUnderActive();
+        hideNonMatching(sets[key]);
+        setActiveChip(key);
+        if (lastStats) writeLabels(lastStats);
+      } catch (e) { console.warn('exp', e); }
+      busy = false; reconnectSoon();
+    }
+
+    function writeLabels(s) {
+      lastStats = s;
+      var map = { all: s.all, Active: s.Active, Terminated: s.Terminated, Fire: s.Fire, Burglar: s.Burglar, Access: s.Access };
+      BUCKET_KEYS.forEach(function (k) { map[k] = s.counts[k]; });
+      if (!(s.all > 0)) return;
+      [].forEach.call(bar.querySelectorAll('.filter-chip'), function (chip) {
+        var f = chip.getAttribute('data-filter');
+        if (map[f] != null) chip.innerHTML = labelOf(chip) + ' <span class="chip-count">(' + map[f] + ')</span>';
+      });
+    }
+
+    function reconnectSoon() { setTimeout(function () { if (list) mo.observe(list, { childList: true }); }, 60); }
+
+    // main refresh: read full data (force 'all'), compute, then restore the user's view
+    function refresh() {
+      if (busy) return; busy = true; if (mo) mo.disconnect();
+      try {
+        var savedExp = expState, savedNative = null;
+        if (!savedExp) { var ac = bar.querySelector('.filter-chip.active'); savedNative = ac ? ac.getAttribute('data-filter') : 'all'; }
+        window.setFilter('all', chipEl('all'));
+        var s = computeStats();
+        if (savedExp) {
+          window.setFilter('Active', chipEl('Active'));
+          hideNonMatching(s.sets[savedExp]);
+          setActiveChip(savedExp);
+        } else {
+          window.setFilter(savedNative, chipEl(savedNative));
+        }
+        writeLabels(s);
+      } catch (e) { console.warn('chipCounts', e); }
+      busy = false; reconnectSoon();
+    }
+
+    mo = new MutationObserver(function () {
+      if (busy) return;
+      clearTimeout(t); t = setTimeout(function () { if (!busy) refresh(); }, 120);
+    });
+    mo.observe(list, { childList: true });
+
+    window.updateChipCounts = refresh; // manual hook if ever needed
+    refresh();
+  }
+
+  boot();
+})();
+</script>
 </body>
 </html>
