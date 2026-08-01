@@ -245,6 +245,66 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--gray1);
 .filter-chip.red.active { background: var(--red); border-color: var(--red); }
 .filter-chip.green.active { background: var(--green); border-color: var(--green); }
 
+/* --- Data / Tools dropdown --- */
+.hdd { position: relative; display: inline-block; }
+.hdd-menu { position: absolute; top: calc(100% + 6px); left: 0; z-index: 300; background: #fff; border: 1px solid var(--gray3); border-radius: 8px; box-shadow: 0 8px 26px rgba(0,0,0,0.18); min-width: 214px; padding: 5px; display: none; }
+.hdd.open .hdd-menu { display: block; }
+.hdd-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 8px 10px; font-size: 0.8rem; color: var(--text); cursor: pointer; font-weight: 500; }
+.hdd-item:hover { background: #eef4ff; color: var(--blue); }
+.hdd-caret { font-size: 0.62rem; margin-left: 2px; }
+
+/* --- native extra filter chips --- */
+.filter-chip .chip-count { opacity: .7; font-weight: 600; margin-left: 2px; font-size: .9em; }
+.filter-chip.exp { border-color: #e0a800; color: #8a6d00; }
+.filter-chip.exp:hover { border-color: #c69500; color: #c69500; }
+.filter-chip.exp.active { background: #e0a800; border-color: #e0a800; color: #fff; }
+.filter-chip.overdue { border-color: #dc3545; color: #a71d2a; }
+.filter-chip.overdue:hover { border-color: #c82333; color: #c82333; }
+.filter-chip.overdue.active { background: #dc3545; border-color: #dc3545; color: #fff; }
+.filter-chip.filters-btn { border-color: var(--gray4); color: var(--gray4); font-weight: 600; }
+.filter-chip.filters-btn:hover { border-color: var(--blue); color: var(--blue); }
+.filter-chip.filters-btn.has-adv { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+/* --- Filters panel --- */
+#filters-panel { display: none; padding: 10px 12px; margin: 0 12px 8px; border: 1px solid var(--gray3); border-radius: 8px; background: #fafbfc; }
+#filters-panel.open { display: block; }
+#filters-panel .fp-group { margin-bottom: 9px; }
+#filters-panel .fp-group:last-child { margin-bottom: 0; }
+#filters-panel .fp-lbl { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray4); font-weight: 700; margin-bottom: 4px; display: block; }
+#filters-panel .fp-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+#filters-panel select, #filters-panel input[type=number] { font-size: 0.76rem; padding: 4px 7px; border: 1.5px solid var(--gray3); border-radius: 6px; outline: none; background: #fff; font-family: inherit; }
+#filters-panel input[type=number] { width: 90px; }
+.fp-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; border-top: 1px solid var(--gray2); padding-top: 8px; }
+.fp-clear { background: none; border: none; color: var(--red); font-size: 0.74rem; font-weight: 600; cursor: pointer; }
+.fp-done { background: var(--blue); color: #fff; border: none; border-radius: 6px; padding: 5px 13px; font-size: 0.74rem; font-weight: 600; cursor: pointer; }
+
+/* --- active (removable) filter chips --- */
+#active-filter-chips { display: none; padding: 0 12px 8px; }
+#active-filter-chips.show { display: block; }
+#active-filter-chips .afc-head { font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--gray4); font-weight: 700; margin-bottom: 6px; }
+.afc { display: inline-flex; align-items: center; gap: 5px; background: var(--navy); color: #fff; border-radius: 20px; font-size: 0.7rem; padding: 3px 6px 3px 10px; margin: 0 5px 5px 0; }
+.afc .afc-x { cursor: pointer; background: rgba(255,255,255,0.25); border-radius: 50%; width: 15px; height: 15px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.66rem; line-height: 1; }
+.afc .afc-x:hover { background: rgba(255,255,255,0.55); }
+.afc-clear { display: inline-flex; align-items: center; background: none; border: 1px solid var(--gray3); color: var(--gray4); border-radius: 20px; font-size: 0.7rem; padding: 3px 10px; cursor: pointer; font-weight: 600; }
+.afc-clear:hover { border-color: var(--red); color: var(--red); }
+
+/* --- long single-line copyable fields --- */
+.copyable { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.copyable:hover { color: var(--blue); text-decoration: underline dotted; }
+.onelil { white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis; word-break: normal !important; overflow-wrap: normal !important; }
+.onelil:focus { text-overflow: clip; }
+/* Copy stays available even while the panel is locked (lock only blocks editing). */
+.cards-row.locked .copy-btn, .cards-row.locked .copyable,
+.cards-row.locked .editable-field.copy-locked { pointer-events: auto !important; }
+.cards-row.locked .editable-field.copy-locked { cursor: pointer; }
+.cards-row.locked .editable-field.copy-locked:hover { color: var(--blue); }
+/* Long single-line values get more of the row than the default 50/50 split. */
+.info-row.copyrow .info-label { flex: 0 0 34%; }
+.info-row.copyrow .editable-field { flex: 1 1 auto; min-width: 0; }
+.copy-btn { border: none; background: none; cursor: pointer; font-size: 0.82rem; line-height: 1; padding: 0 2px; opacity: 0.5; flex: 0 0 auto; }
+.copy-btn:hover { opacity: 1; }
+.copied-flash { position: fixed; z-index: 99999; background: #155724; color: #fff; font-size: 0.72rem; font-weight: 600; padding: 3px 9px; border-radius: 6px; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,0.25); transform: translate(-50%, -140%); }
+
 #account-list { flex: 1; overflow-y: auto; }
 .acct-item { padding: 10px 14px; border-bottom: 1px solid var(--gray2); cursor: pointer; transition: background 0.1s; }
 .acct-item:hover { background: var(--gray1); }
@@ -454,12 +514,17 @@ table.inv-list tr.unbilled:hover td { background: #fff5d6; }
   </div>
   <div class="header-btns">
     <button class="hbtn hbtn-green" onclick="openNewAgreement()">＋ New Agreement</button>
-    <button class="hbtn hbtn-accent" onclick="exportCSV()">⬇ Export Excel</button>
-    <button class="hbtn hbtn-outline" onclick="saveData()">💾 Save</button>
-    <button class="hbtn hbtn-outline" onclick="loadFromFile()">📂 Load</button>
-    <button class="hbtn hbtn-outline" onclick="refreshFromCloud()" title="Pull the latest data from the cloud">🔄 Refresh from Cloud</button>
-    <button class="hbtn hbtn-outline" onclick="openBatchImport()" title="Import a batch billing file: stamp invoice #s onto the matching scheduled invoices and mark them billed">📥 Import Billing</button>
-    <button class="hbtn hbtn-outline" onclick="openExportInvoices()" title="Batch-export every invoice for a billing month as individual PDFs">🧾 Export Invoices</button>
+    <div class="hdd" id="tools-dd">
+      <button class="hbtn hbtn-accent" onclick="toggleToolsMenu(event)">🛠 Data / Tools <span class="hdd-caret">▾</span></button>
+      <div class="hdd-menu">
+        <button class="hdd-item" onclick="ddRun(exportCSV)">⬇ Export Excel</button>
+        <button class="hdd-item" onclick="ddRun(saveData)">💾 Save</button>
+        <button class="hdd-item" onclick="ddRun(loadFromFile)">📂 Load</button>
+        <button class="hdd-item" onclick="ddRun(refreshFromCloud)" title="Pull the latest data from the cloud">🔄 Refresh from Cloud</button>
+        <button class="hdd-item" onclick="ddRun(openBatchImport)" title="Import a batch billing file: stamp invoice #s onto the matching scheduled invoices and mark them billed">📥 Import Billing</button>
+        <button class="hdd-item" onclick="ddRun(openExportInvoices)" title="Batch-export every invoice for a billing month as individual PDFs">🧾 Export Invoices</button>
+      </div>
+    </div>
     <input type="file" id="load-file" accept=".json,.xlsx" style="display:none" onchange="handleFileLoad(event)">
     <input type="file" id="batch-file" accept=".xlsx" style="display:none" onchange="handleBatchBillingFile(event)">
   </div>
@@ -484,13 +549,61 @@ table.inv-list tr.unbilled:hover td { background: #fff5d6; }
       </div>
     </div>
     <div id="filter-bar">
-      <span class="filter-chip active" data-filter="all" onclick="setFilter('all',this)">All</span>
-      <span class="filter-chip green" data-filter="Active" onclick="setFilter('Active',this)">Active</span>
-      <span class="filter-chip red" data-filter="Terminated" onclick="setFilter('Terminated',this)">Terminated</span>
-      <span class="filter-chip" data-filter="Fire" onclick="setFilter('Fire',this)">Fire</span>
-      <span class="filter-chip" data-filter="Burglar" onclick="setFilter('Burglar',this)">Burglar</span>
-      <span class="filter-chip" data-filter="Access" onclick="setFilter('Access',this)">Access</span>
+      <span class="filter-chip green" data-status="Active" onclick="setStatus('Active')">Active</span>
+      <span class="filter-chip active" data-status="all" onclick="setStatus('all')">All</span>
+      <span class="filter-chip red" data-status="Terminated" onclick="setStatus('Terminated')">Terminated</span>
+      <span class="filter-chip exp" data-exp="0-30" onclick="toggleExpiring('0-30')">Exp ≤30d</span>
+      <span class="filter-chip filters-btn" id="filters-btn" onclick="toggleFiltersPanel(event)">⚙ Filters <span class="hdd-caret">▾</span></span>
     </div>
+    <div id="filters-panel">
+      <div class="fp-group">
+        <span class="fp-lbl">Expiring</span>
+        <div class="fp-row">
+          <span class="filter-chip exp" data-exp="31-60" onclick="toggleExpiring('31-60')">31–60 days</span>
+          <span class="filter-chip exp" data-exp="61-90" onclick="toggleExpiring('61-90')">61–90 days</span>
+          <span class="filter-chip overdue" data-overdue="1" onclick="toggleOverdue()">Overdue invoices</span>
+        </div>
+      </div>
+      <div class="fp-group">
+        <span class="fp-lbl">System type</span>
+        <div class="fp-row">
+          <span class="filter-chip" data-sys="Fire" onclick="toggleSystem('Fire')">Fire</span>
+          <span class="filter-chip" data-sys="Access" onclick="toggleSystem('Access')">Access</span>
+          <span class="filter-chip" data-sys="Burglar" onclick="toggleSystem('Burglar')">Burglar</span>
+        </div>
+      </div>
+      <div class="fp-group">
+        <span class="fp-lbl">Billing frequency</span>
+        <div class="fp-row">
+          <select id="fp-freq" onchange="setBillingFreqFilter(this.value)">
+            <option value="">Any</option>
+            <option>Monthly</option><option>Quarterly</option><option>Semi-Annual</option><option>Annual</option><option>Custom</option><option>T&amp;M</option><option>One-Time</option>
+          </select>
+        </div>
+      </div>
+      <div class="fp-group">
+        <span class="fp-lbl">Customer / site type</span>
+        <div class="fp-row">
+          <select id="fp-site" onchange="setSiteTypeFilter(this.value)">
+            <option value="">Any</option>
+            <option>Commercial</option><option>Residential</option><option>Industrial</option><option>Government</option>
+          </select>
+        </div>
+      </div>
+      <div class="fp-group">
+        <span class="fp-lbl">Agreement amount ($/mo RMR)</span>
+        <div class="fp-row">
+          <input type="number" id="fp-amtmin" placeholder="Min" oninput="setAmtRange()">
+          <span style="color:var(--gray4);">–</span>
+          <input type="number" id="fp-amtmax" placeholder="Max" oninput="setAmtRange()">
+        </div>
+      </div>
+      <div class="fp-actions">
+        <button class="fp-clear" onclick="clearAllFilters()">Clear all filters</button>
+        <button class="fp-done" onclick="closeFiltersPanel()">Done</button>
+      </div>
+    </div>
+    <div id="active-filter-chips"></div>
     <div id="account-list"></div>
   </div>
   <div id="main">
@@ -653,7 +766,8 @@ const RAW_DATA = []
 const DATA_VERSION = '2026-06-multisite-lump-normalize-V2.4';
 let DB = [];          // live editable copy of all records
 let invoiceDB = {};   // key: agreementKey -> array of invoice objects
-let currentFilter = 'all';
+// Filter model (multi-select): status is single-choice; the rest are additive.
+const FILT = { status:'all', systems:new Set(), expiring:new Set(), overdue:false, billingFreq:'', siteType:'', amtMin:null, amtMax:null };
 let selectedIdx = null;
 let lineItems = [];
 let activeTab = 'invoices';
@@ -3141,9 +3255,22 @@ function getFiltered() {
   const q = (document.getElementById('search').value||'').toLowerCase().trim();
   const agrQ = (document.getElementById('search-agr').value||'').trim();
   return DB.filter(r => {
-    // Status/type filter
-    const matchFilter = currentFilter==='all' || r['Agreement Status']===currentFilter || r['System Type']===currentFilter;
-    if (!matchFilter) return false;
+    // --- Multi-filter matching ---
+    if (FILT.status!=='all' && r['Agreement Status']!==FILT.status) return false;
+    if (FILT.systems.size && !FILT.systems.has(r['System Type'])) return false;
+    if (FILT.expiring.size) {
+      const days = daysUntilExp(r);
+      let okE = false; FILT.expiring.forEach(function(b){ if (inExpBucket(days,b)) okE = true; });
+      if (!okE) return false;
+    }
+    if (FILT.overdue && !agrHasOverdue(r)) return false;
+    if (FILT.billingFreq && (r['Billing Frequency']||'')!==FILT.billingFreq) return false;
+    if (FILT.siteType && (r['Site Type']||'')!==FILT.siteType) return false;
+    if (FILT.amtMin!=null || FILT.amtMax!=null) {
+      const amtR = agreementMonthlyRMR(String(r['Agreement#']));
+      if (FILT.amtMin!=null && amtR < FILT.amtMin) return false;
+      if (FILT.amtMax!=null && amtR > FILT.amtMax) return false;
+    }
 
     // Agreement # field: exact match on the full number typed
     if (agrQ) {
@@ -3164,13 +3291,229 @@ function getFiltered() {
   });
 }
 
-function setFilter(f, el) {
-  currentFilter = f;
-  document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active');
+function filterAccounts() { renderList(); }
+
+// Back-compat shim (legacy callers). Maps to the new model.
+function setFilter(f) {
+  if (f==='all'||f==='Active'||f==='Terminated') setStatus(f);
+  else if (f) toggleSystem(f);
+}
+
+// ── Filter helpers ───────────────────────────────────────────────────────────
+function daysUntilExp(r){
+  const d = parseDate(r['Agreement Expiration Date']);
+  if (!d || d.getTime()===0 || isNaN(d.getTime())) return null;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.floor((d - today)/86400000);
+}
+function inExpBucket(days, b){
+  if (days==null) return false;
+  if (b==='0-30')  return days>=0  && days<=30;
+  if (b==='31-60') return days>=31 && days<=60;
+  if (b==='61-90') return days>=61 && days<=90;
+  return false;
+}
+function agrHasOverdue(r){
+  const agr = String(r['Agreement#']); const seen = {};
+  const today = new Date(); today.setHours(0,0,0,0);
+  let found = false;
+  DB.forEach(function(x){
+    if (String(x['Agreement#'])!==agr) return;
+    const k = makeKey(x); if (seen[k]) return; seen[k]=1;
+    (invoiceDB[k]||[]).forEach(function(inv){
+      if (inv.billed) return;
+      const d = parseDate(inv.date);
+      if (d && d.getTime()!==0 && d<=today) found = true;
+    });
+  });
+  return found;
+}
+function money(v){ const n=parseFloat(String(v==null?'':v).replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:0; }
+function rmrOf(a){
+  const status=String(a['Agreement Status']||'').toLowerCase();
+  if(status==='active'){ const v=agreementMonthlyRMR(a['Agreement#']); if(typeof v==='number'&&isFinite(v)) return v; }
+  return money(a['Monthly Billing Charge']);
+}
+function fmtMoneyShort(n){ return '$'+Math.round(n||0).toLocaleString('en-US'); }
+
+// ── Filter setters (each re-renders) ─────────────────────────────────────────
+function setStatus(v){ FILT.status = (FILT.status===v && v!=='all') ? 'all' : v; renderList(); }
+function toggleSystem(v){ FILT.systems.has(v) ? FILT.systems.delete(v) : FILT.systems.add(v); renderList(); }
+function toggleExpiring(v){ FILT.expiring.has(v) ? FILT.expiring.delete(v) : FILT.expiring.add(v); renderList(); }
+function toggleOverdue(){ FILT.overdue = !FILT.overdue; renderList(); }
+function setBillingFreqFilter(v){ FILT.billingFreq = v||''; renderList(); }
+function setSiteTypeFilter(v){ FILT.siteType = v||''; renderList(); }
+function setAmtRange(){
+  const mn=document.getElementById('fp-amtmin'), mx=document.getElementById('fp-amtmax');
+  const a = (mn && mn.value!=='') ? parseFloat(mn.value) : null;
+  const b = (mx && mx.value!=='') ? parseFloat(mx.value) : null;
+  FILT.amtMin = (a!=null && isFinite(a)) ? a : null;
+  FILT.amtMax = (b!=null && isFinite(b)) ? b : null;
   renderList();
 }
-function filterAccounts() { renderList(); }
+function clearAllFilters(){
+  FILT.status='all'; FILT.systems.clear(); FILT.expiring.clear();
+  FILT.overdue=false; FILT.billingFreq=''; FILT.siteType=''; FILT.amtMin=null; FILT.amtMax=null;
+  const f=document.getElementById('fp-freq'); if(f) f.value='';
+  const s=document.getElementById('fp-site'); if(s) s.value='';
+  const mn=document.getElementById('fp-amtmin'); if(mn) mn.value='';
+  const mx=document.getElementById('fp-amtmax'); if(mx) mx.value='';
+  renderList();
+}
+function removeFilter(kind, val){
+  if (kind==='status') FILT.status='all';
+  else if (kind==='sys') FILT.systems.delete(val);
+  else if (kind==='exp') FILT.expiring.delete(val);
+  else if (kind==='overdue') FILT.overdue=false;
+  else if (kind==='freq'){ FILT.billingFreq=''; const f=document.getElementById('fp-freq'); if(f) f.value=''; }
+  else if (kind==='site'){ FILT.siteType=''; const s=document.getElementById('fp-site'); if(s) s.value=''; }
+  else if (kind==='amt'){ FILT.amtMin=null; FILT.amtMax=null;
+    const mn=document.getElementById('fp-amtmin'), mx=document.getElementById('fp-amtmax'); if(mn) mn.value=''; if(mx) mx.value=''; }
+  renderList();
+}
+function toggleFiltersPanel(e){ if(e) e.stopPropagation(); const p=document.getElementById('filters-panel'); if(p) p.classList.toggle('open'); }
+function closeFiltersPanel(){ const p=document.getElementById('filters-panel'); if(p) p.classList.remove('open'); }
+
+function advFilterCount(){
+  let n=0;
+  if (FILT.expiring.has('31-60')) n++;
+  if (FILT.expiring.has('61-90')) n++;
+  if (FILT.overdue) n++;
+  n += FILT.systems.size;
+  if (FILT.billingFreq) n++;
+  if (FILT.siteType) n++;
+  if (FILT.amtMin!=null || FILT.amtMax!=null) n++;
+  return n;
+}
+
+// Full-dataset counts + RMR for chip badges/hover.
+function computeChipStats(){
+  const seen={}, uniq=[];
+  DB.forEach(function(a){ const num=a['Agreement#']; if(num!=null && !seen[num]){ seen[num]=1; uniq.push(a); } });
+  const today=new Date(); today.setHours(0,0,0,0);
+  const s={ all:uniq.length, Active:0, Terminated:0, Fire:0, Burglar:0, Access:0,
+            exp:{'0-30':0,'31-60':0,'61-90':0}, overdue:0,
+            rmr:{ all:0, Active:0, Terminated:0, Fire:0, Burglar:0, Access:0 } };
+  uniq.forEach(function(a){
+    const rmr=rmrOf(a); const status=String(a['Agreement Status']||'').toLowerCase();
+    s.rmr.all += rmr;
+    if (status==='active'){ s.Active++; s.rmr.Active += rmr; }
+    else if (status==='terminated'){ s.Terminated++; s.rmr.Terminated += rmr; }
+    const sys=a['System Type'];
+    if (sys==='Fire'){ s.Fire++; s.rmr.Fire += rmr; }
+    else if (sys==='Burglar'){ s.Burglar++; s.rmr.Burglar += rmr; }
+    else if (sys==='Access'){ s.Access++; s.rmr.Access += rmr; }
+    if (status==='active'){
+      const d=parseDate(a['Agreement Expiration Date']);
+      if (d && d.getTime()!==0){
+        const days=Math.floor((d - today)/86400000);
+        if (inExpBucket(days,'0-30'))  s.exp['0-30']++;
+        if (inExpBucket(days,'31-60')) s.exp['31-60']++;
+        if (inExpBucket(days,'61-90')) s.exp['61-90']++;
+      }
+      if (agrHasOverdue(a)) s.overdue++;
+    }
+  });
+  return s;
+}
+function writeChipCounts(s){
+  function setC(sel,label,cnt,rmr){
+    document.querySelectorAll(sel).forEach(function(chip){
+      chip.innerHTML = label + ' <span class="chip-count">('+cnt+')</span>';
+      if (rmr!=null) chip.title = 'Total RMR: '+fmtMoneyShort(rmr)+'/mo · '+cnt+' agmts';
+    });
+  }
+  setC('.filter-chip[data-status="all"]','All', s.all, s.rmr.all);
+  setC('.filter-chip[data-status="Active"]','Active', s.Active, s.rmr.Active);
+  setC('.filter-chip[data-status="Terminated"]','Terminated', s.Terminated, s.rmr.Terminated);
+  setC('.filter-chip[data-sys="Fire"]','Fire', s.Fire, s.rmr.Fire);
+  setC('.filter-chip[data-sys="Access"]','Access', s.Access, s.rmr.Access);
+  setC('.filter-chip[data-sys="Burglar"]','Burglar', s.Burglar, s.rmr.Burglar);
+  setC('.filter-chip[data-exp="0-30"]','Exp ≤30d', s.exp['0-30']);
+  setC('.filter-chip[data-exp="31-60"]','31–60 days', s.exp['31-60']);
+  setC('.filter-chip[data-exp="61-90"]','61–90 days', s.exp['61-90']);
+  setC('.filter-chip[data-overdue="1"]','Overdue invoices', s.overdue);
+}
+function syncFilterUI(stats){
+  document.querySelectorAll('#filter-bar .filter-chip[data-status]').forEach(function(c){
+    c.classList.toggle('active', c.getAttribute('data-status')===FILT.status);
+  });
+  document.querySelectorAll('.filter-chip[data-sys]').forEach(function(c){
+    c.classList.toggle('active', FILT.systems.has(c.getAttribute('data-sys')));
+  });
+  document.querySelectorAll('.filter-chip[data-exp]').forEach(function(c){
+    c.classList.toggle('active', FILT.expiring.has(c.getAttribute('data-exp')));
+  });
+  document.querySelectorAll('.filter-chip[data-overdue]').forEach(function(c){
+    c.classList.toggle('active', FILT.overdue);
+  });
+  if (stats) writeChipCounts(stats);
+  const fb=document.getElementById('filters-btn');
+  if (fb){
+    const adv=advFilterCount();
+    fb.classList.toggle('has-adv', adv>0);
+    fb.innerHTML = '⚙ Filters' + (adv?(' <span class="chip-count">('+adv+')</span>'):'') + ' <span class="hdd-caret">▾</span>';
+  }
+  renderActiveChips();
+}
+function renderActiveChips(){
+  const box=document.getElementById('active-filter-chips');
+  if (!box) return;
+  const chips=[];
+  if (FILT.status!=='all') chips.push({t:FILT.status, k:'status'});
+  FILT.systems.forEach(function(sy){ chips.push({t:sy, k:'sys', v:sy}); });
+  ['0-30','31-60','61-90'].forEach(function(b){ if(FILT.expiring.has(b)) chips.push({t:'Expires '+b.replace('-','–')+'d', k:'exp', v:b}); });
+  if (FILT.overdue) chips.push({t:'Overdue invoices', k:'overdue'});
+  if (FILT.billingFreq) chips.push({t:FILT.billingFreq, k:'freq'});
+  if (FILT.siteType) chips.push({t:FILT.siteType, k:'site'});
+  if (FILT.amtMin!=null || FILT.amtMax!=null){
+    const lo = FILT.amtMin!=null ? ('$'+FILT.amtMin) : '$0';
+    const hi = FILT.amtMax!=null ? ('$'+FILT.amtMax) : '∞';
+    chips.push({t:lo+'–'+hi+'/mo', k:'amt'});
+  }
+  if (!chips.length){ box.classList.remove('show'); box.innerHTML=''; return; }
+  box.classList.add('show');
+  box.innerHTML = '<div class="afc-head">Filters ('+chips.length+')</div>'
+    + chips.map(function(c){
+        const arg = c.v ? ("'"+c.v+"'") : 'null';
+        return '<span class="afc">'+esc(c.t)+'<span class="afc-x" title="Remove" onclick="removeFilter(\''+c.k+'\','+arg+')">✕</span></span>';
+      }).join('')
+    + '<button class="afc-clear" onclick="clearAllFilters()">Clear All</button>';
+}
+
+// ── Toolbar Data/Tools dropdown ──────────────────────────────────────────────
+function toggleToolsMenu(e){ if(e) e.stopPropagation(); const dd=document.getElementById('tools-dd'); if(dd) dd.classList.toggle('open'); }
+function ddRun(fn){ const dd=document.getElementById('tools-dd'); if(dd) dd.classList.remove('open'); try{ fn(); }catch(err){ console.warn(err); } }
+
+// ── Click-to-copy ────────────────────────────────────────────────────────────
+function copyText(str, ev){
+  str = String(str==null?'':str).trim();
+  if(!str || str==='—') return;
+  const done=function(){ flashCopied(ev); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(str).then(done).catch(function(){ legacyCopy(str); done(); });
+  } else { legacyCopy(str); done(); }
+}
+function legacyCopy(str){
+  const ta=document.createElement('textarea'); ta.value=str; ta.style.position='fixed'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(e){} document.body.removeChild(ta);
+}
+function flashCopied(ev){
+  const f=document.createElement('div'); f.className='copied-flash'; f.textContent='Copied ✓';
+  let x=window.innerWidth/2, y=window.innerHeight/2;
+  if(ev && (ev.clientX||ev.clientY)){ x=ev.clientX; y=ev.clientY; }
+  f.style.left=x+'px'; f.style.top=y+'px';
+  document.body.appendChild(f);
+  setTimeout(function(){ f.remove(); }, 900);
+}
+
+// Close menus / panel on outside click.
+document.addEventListener('click', function(e){
+  const dd=document.getElementById('tools-dd');
+  if(dd && dd.classList.contains('open') && !dd.contains(e.target)) dd.classList.remove('open');
+  const fp=document.getElementById('filters-panel'), fbtn=document.getElementById('filters-btn');
+  if(fp && fp.classList.contains('open') && !fp.contains(e.target) && (!fbtn || !fbtn.contains(e.target))) fp.classList.remove('open');
+});
 
 // Pressing Enter in the Agr # field opens that agreement directly (selects its
 // first matching account row). Falls back to nothing if no match.
@@ -3252,6 +3595,7 @@ function renderList() {
   document.getElementById('stat-active').textContent = Object.keys(distinctActive).length;
   document.getElementById('stat-mrr').textContent = '$'+mrr.toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
   document.getElementById('stat-total').textContent = Object.keys(distinctAll).length;
+  try { syncFilterUI(computeChipStats()); } catch(e){ /* filter UI optional */ }
 }
 
 // ── Detail View ────────────────────────────────────────────────────────────
@@ -3280,7 +3624,7 @@ function renderDetail(r) {
     <div class="detail-header">
       <div>
         <h2>${esc((AGR_META[String(r['Agreement#'])]||{}).h || r['Account Name'] || r['Customer Name'])}</h2>
-        <p>${esc(r['Customer Name']||'')} &nbsp;·&nbsp; Agr #${r['Agreement#']} &nbsp;·&nbsp; SWO ${esc(r['SWO#']||'—')}</p>
+        <p style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;">${esc(r['Customer Name']||'')} &nbsp;·&nbsp; <span class="copyable" data-copy="${esc(String(r['Agreement#']||''))}" title="Click to copy agreement #" onclick="copyText(this.getAttribute('data-copy'), event)">Agr #${esc(String(r['Agreement#']))}</span> &nbsp;·&nbsp; <span class="copyable" data-copy="${esc(String(r['SWO#']||''))}" title="Click to copy SWO #" onclick="copyText(this.getAttribute('data-copy'), event)">SWO ${esc(r['SWO#']||'—')}</span></p>
       </div>
       <span class="status-badge ${statusClass}">${status}</span>
     </div>
@@ -4104,9 +4448,26 @@ function renderDetailTab() {
   const apTitle = AP ? 'Locked — click Unlock to edit' : 'Click to edit';
 
   // editField lockMode: 'details' (top panels), 'ap' (A/P panel), or 'none'.
-  function editField(field, label, val, lockMode='details') {
+  function editField(field, label, val, lockMode='details', opts={}) {
     const isLocked = lockMode==='details' ? LK : (lockMode==='ap' ? AP : false);
     const ro  = isLocked ? 'readonly tabindex="-1"' : '';
+    // Copy-enabled fields render as a single-line <input>: always legible, no
+    // scrollbar, ellipsis when too long, and full text on hover/focus.
+    if (opts.copy) {
+      const sval = String(val==null?'':val);
+      const copyBtn = sval ? `<button type="button" class="copy-btn" title="Copy" data-copy="${esc(sval)}" onclick="copyText(this.getAttribute('data-copy'), event)">📋</button>` : '';
+      // While locked the value itself is a copy target; unlocked it edits normally.
+      const lockCopy = (isLocked && sval)
+        ? ` copy-locked" onclick="copyText(this.value, event)"`
+        : '"';
+      const ttl = sval ? (isLocked ? 'Click to copy — '+esc(sval) : esc(sval)) : (isLocked ? 'Locked — click Unlock to edit' : 'Click to edit');
+      return `<div class="info-row copyrow" style="align-items:center;gap:4px;">
+        <span class="info-label">${label}</span>
+        <input type="text" class="editable-field onelil${lockCopy} value="${esc(sval)}" ${ro} spellcheck="false"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+          onchange="updateField(${idx},'${field}',this.value)" title="${ttl}">${copyBtn}
+      </div>`;
+    }
     const ttl = isLocked ? 'Locked — click Unlock to edit' : 'Click to edit';
     return `<div class="info-row">
       <span class="info-label">${label}</span>
@@ -4140,10 +4501,12 @@ function renderDetailTab() {
     const count = emails.filter(Boolean).length;
     const rows = emails.map((em,i)=>`
       <div class="info-row" style="align-items:center;gap:6px;">
-        <textarea class="editable-field grow-field" style="flex:1;text-align:left;" data-apemail="${field}" ${apIn} rows="1" spellcheck="false"
-          oninput="autoGrow(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-          onchange="apEmailEdit(${idx},'${field}',${i},this.value)" title="${apTitle}"
-          placeholder="name@customer.com">${esc(em)}</textarea>
+        <input type="text" class="editable-field onelil${(AP&&em)?' copy-locked':''}" style="flex:1;text-align:left;min-width:0;" data-apemail="${field}" ${apIn} spellcheck="false"
+          ${(AP&&em)?'onclick="copyText(this.value, event)"':''}
+          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+          onchange="apEmailEdit(${idx},'${field}',${i},this.value)" title="${em?((AP?'Click to copy — ':'')+esc(em)):apTitle}"
+          placeholder="name@customer.com" value="${esc(em)}">
+        ${em?`<button type="button" class="copy-btn" title="Copy" data-copy="${esc(em)}" onclick="copyText(this.getAttribute('data-copy'), event)">📋</button>`:''}
         <button type="button" title="Remove this email"
           onclick="apEmailRemove(${idx},'${field}',${i})"
           style="border:none;background:none;color:var(--red);cursor:pointer;font-size:0.95rem;line-height:1;padding:0 2px;">✕</button>
@@ -4172,8 +4535,8 @@ function renderDetailTab() {
     <div class="cards-row${LK?' locked':''}">
       <div class="info-card">
         <h3>Account Info</h3>
-        <div class="info-row"><span class="info-label">Customer #</span><span class="info-value">${r['Customer#']||'—'}</span></div>
-        <div class="info-row"><span class="info-label">CS Account #</span><span class="info-value">${esc(r['Central Station Account#']||'—')}</span></div>
+        <div class="info-row"><span class="info-label">Customer #</span><span class="info-value copyable" data-copy="${esc(String(r['Customer#']||''))}" title="${r['Customer#']?('Click to copy — '+esc(String(r['Customer#']))):''}" onclick="copyText(this.getAttribute('data-copy'), event)">${esc(String(r['Customer#']||'—'))}</span></div>
+        <div class="info-row"><span class="info-label">CS Account #</span><span class="info-value copyable" data-copy="${esc(String(r['Central Station Account#']||''))}" title="${r['Central Station Account#']?('Click to copy — '+esc(String(r['Central Station Account#']))):''}" onclick="copyText(this.getAttribute('data-copy'), event)">${esc(r['Central Station Account#']||'—')}</span></div>
         <div class="info-row"><span class="info-label">System Type</span><span class="info-value"><span class="acct-badge badge-${r['System Type']||'default'}">${esc(r['System Type']||'—')}</span></span></div>
         <div class="info-row"><span class="info-label">Site Type</span><span class="info-value">${esc(r['Site Type']||'—')}</span></div>
         ${editField('Agreement Status','Status',r['Agreement Status'])}
@@ -4182,8 +4545,8 @@ function renderDetailTab() {
         <h3>Site Contact <span style="font-size:0.66rem;color:var(--blue);font-weight:400;font-style:italic">(click to edit)</span></h3>
         ${editField('Contact First Name','First Name',r['Contact First Name'])}
         ${editField('Contact Last Name','Last Name',r['Contact Last Name'])}
-        ${editField('Contact Email','Email',r['Contact Email'])}
-        ${editField('Contact Phone','Phone',r['Contact Phone'])}
+        ${editField('Contact Email','Email',r['Contact Email'],'details',{copy:true})}
+        ${editField('Contact Phone','Phone',r['Contact Phone'],'details',{copy:true})}
         ${editField('Customer PO','Customer PO',r['Customer PO'])}
       </div>
       <div class="info-card">
@@ -4252,7 +4615,11 @@ function renderDetailTab() {
             <span class="info-label">${label}</span>
             <span style="flex:1;text-align:right;padding:5px 2px;color:#222;font-weight:500;">${esc(String(val))}</span>
           </div>`;
-          return ro('Invoice #',num) + ro('Date',date) + ro('Amount',amt);
+          const roCopy = (label,val) => `<div class="info-row" style="align-items:center;">
+            <span class="info-label">${label}</span>
+            <span class="copyable" style="flex:1;text-align:right;padding:5px 2px;color:#222;font-weight:500;" data-copy="${esc(String(val))}" title="${(val&&val!=='—')?('Click to copy — '+esc(String(val))):''}" onclick="copyText(this.getAttribute('data-copy'), event)">${esc(String(val))}</span>
+          </div>`;
+          return roCopy('Invoice #',num) + ro('Date',date) + ro('Amount',amt);
         })()}
       </div>
     </div>
@@ -4276,7 +4643,7 @@ function renderDetailTab() {
           ${editField('AP Contact Title','Title',r['AP Contact Title'],'ap')}
           ${multiEmailField('AP Contact Email','Email(s)',r['AP Contact Email'])}
           ${multiEmailField('AP Contact CC','CC Email(s)',r['AP Contact CC'])}
-          ${editField('AP Contact Phone','Phone',r['AP Contact Phone'],'ap')}
+          ${editField('AP Contact Phone','Phone',r['AP Contact Phone'],'ap',{copy:true})}
         </div>
         <div class="info-card" style="flex:1.2;">
           <h3 style="font-size:0.78rem;color:#555;text-transform:uppercase;letter-spacing:.04em;">Invoice Delivery Method</h3>
@@ -6994,228 +7361,7 @@ async function doExportInvoices(){
 }
 </script>
 
-<!-- ============================================================
-     P1 CRM - Live filter-chip counts + Expiring/Overdue + RMR hover
-     Paste this ENTIRE block immediately before the closing </body>
-     tag in index.html. Purely additive: it does NOT change your
-     existing chip HTML, setFilter(), getFiltered() or renderList().
 
-     - Live "(count)" on every chip: All, Active, Terminated, Fire,
-       Burglar, Access.
-     - Four new chips: Exp <=90d, Exp <=60d, Exp <=30d (amber) and
-       Overdue (red) = ACTIVE agreements expiring within N days /
-       already past expiration. Clicking one filters the list.
-     - HOVER any chip to see the total monthly RMR for the agreements
-       it represents (uses the app's own agreementMonthlyRMR(), so it
-       matches the header and normalizes Annual/Quarterly/etc.).
-
-     Counts + RMR recompute automatically whenever the account list
-     re-renders (Load, Refresh from Cloud, Save, generate invoices,
-     terminate/reactivate, etc.).
-     ============================================================ -->
-<script>
-(function () {
-  var BAR = '#filter-bar', LIST = '#account-list';
-
-  var EXTRA_CHIPS = [
-    { key: 'exp90', label: 'Exp ≤90d', cls: 'exp' },
-    { key: 'exp60', label: 'Exp ≤60d', cls: 'exp' },
-    { key: 'exp30', label: 'Exp ≤30d', cls: 'exp' },
-    { key: 'expOverdue', label: 'Overdue', cls: 'exp overdue' }
-  ];
-  var BUCKETS = {
-    exp90: function (days) { return days >= 0 && days <= 90; },
-    exp60: function (days) { return days >= 0 && days <= 60; },
-    exp30: function (days) { return days >= 0 && days <= 30; },
-    expOverdue: function (days) { return days < 0; }
-  };
-  var BUCKET_KEYS = Object.keys(BUCKETS);
-
-  function ready() {
-    return document.querySelector(BAR) && document.querySelector(LIST) &&
-           typeof window.setFilter === 'function' && typeof window.getFiltered === 'function';
-  }
-
-  function boot() {
-    if (!ready()) { return setTimeout(boot, 300); }
-    var bar = document.querySelector(BAR), list = document.querySelector(LIST);
-    var mo = null, busy = false, expState = null, t = null, lastStats = null;
-    var hasRMR = typeof window.agreementMonthlyRMR === 'function';
-
-    if (!document.getElementById('chipCountStyle')) {
-      var st = document.createElement('style'); st.id = 'chipCountStyle';
-      st.textContent =
-        '.filter-chip .chip-count{opacity:.7;font-weight:600;margin-left:2px;font-size:.9em;}' +
-        '.filter-chip.exp{border-color:#e0a800;color:#8a6d00;}' +
-        '.filter-chip.exp:hover{border-color:#c69500;color:#c69500;}' +
-        '.filter-chip.exp.active{background:#e0a800;border-color:#e0a800;color:#fff;}' +
-        '.filter-chip.overdue{border-color:#dc3545;color:#a71d2a;}' +
-        '.filter-chip.overdue:hover{border-color:#c82333;color:#c82333;}' +
-        '.filter-chip.overdue.active{background:#dc3545;border-color:#dc3545;color:#fff;}';
-      document.head.appendChild(st);
-    }
-
-    function chipEl(f) { return bar.querySelector('.filter-chip[data-filter="' + f + '"]'); }
-    function labelOf(chip) {
-      var l = chip.getAttribute('data-label');
-      if (l == null) { l = chip.textContent.replace(/\s*\(\d+\)\s*$/, '').trim(); chip.setAttribute('data-label', l); }
-      return l;
-    }
-    function parseD(s) {
-      if (!s) return null;
-      var m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      return m ? new Date(+m[3], +m[1] - 1, +m[2]) : null;
-    }
-    function money(v) { if (v == null) return 0; var n = parseFloat(String(v).replace(/[^0-9.\-]/g, '')); return isFinite(n) ? n : 0; }
-    // Active agreements use the app's normalized monthly RMR (matches the header,
-    // normalizes Annual/Quarterly/etc.). Terminated/other agreements aren't recurring
-    // revenue, so agreementMonthlyRMR() returns 0 for them; for those we instead show
-    // the account's own monthly charge, so a Terminated total equals the sum you'd get
-    // adding up those accounts in the list.
-    function rmrOf(a) {
-      var status = String(a['Agreement Status'] || '').toLowerCase();
-      if (status === 'active' && hasRMR) {
-        var v = window.agreementMonthlyRMR(a['Agreement#']);
-        if (typeof v === 'number' && isFinite(v)) return v;
-      }
-      return money(a['Monthly Billing Charge']);
-    }
-    function fmtMoney(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
-
-    // add the extra chips once
-    if (!chipEl('exp90')) {
-      EXTRA_CHIPS.forEach(function (c) {
-        var el = document.createElement('span');
-        el.className = 'filter-chip ' + c.cls;
-        el.setAttribute('data-filter', c.key);
-        el.setAttribute('data-label', c.label);
-        el.textContent = c.label;
-        el.addEventListener('click', function () { applyExp(c.key); });
-        bar.appendChild(el);
-      });
-    }
-    // clicking any native chip clears the Exp/Overdue state + active styling
-    [].forEach.call(bar.querySelectorAll('.filter-chip:not(.exp)'), function (chip) {
-      chip.addEventListener('click', function () {
-        expState = null;
-        [].forEach.call(bar.querySelectorAll('.filter-chip.exp'), function (c) { c.classList.remove('active'); });
-      }, true);
-    });
-
-    function emptyMap(v) { var o = { all: v, Active: v, Terminated: v, Fire: v, Burglar: v, Access: v }; BUCKET_KEYS.forEach(function (k) { o[k] = v; }); return o; }
-    function emptySets() { var o = {}; BUCKET_KEYS.forEach(function (k) { o[k] = {}; }); return o; }
-
-    // full-dataset stats (caller must have getFiltered() returning the full set, i.e. filter = all)
-    function computeStats() {
-      var rows = window.getFiltered(), seen = {}, uniq = [];
-      rows.forEach(function (a) { var n = a['Agreement#']; if (n != null && !seen[n]) { seen[n] = 1; uniq.push(a); } });
-      var today = new Date(); today.setHours(0, 0, 0, 0);
-      var s = { all: uniq.length, Active: 0, Terminated: 0, Fire: 0, Burglar: 0, Access: 0,
-                sets: emptySets(), counts: emptyMap(0), rmr: emptyMap(0) };
-      uniq.forEach(function (a) {
-        var rmr = rmrOf(a);
-        var status = String(a['Agreement Status'] || '').toLowerCase();
-        s.rmr.all += rmr;
-        if (status === 'active') { s.Active++; s.rmr.Active += rmr; }
-        else if (status === 'terminated') { s.Terminated++; s.rmr.Terminated += rmr; }
-        var sys = a['System Type'];
-        if (sys === 'Fire') { s.Fire++; s.rmr.Fire += rmr; }
-        else if (sys === 'Burglar') { s.Burglar++; s.rmr.Burglar += rmr; }
-        else if (sys === 'Access') { s.Access++; s.rmr.Access += rmr; }
-        if (status !== 'active') return;
-        var d = parseD(a['Agreement Expiration Date']); if (!d) return;
-        var days = Math.floor((d - today) / 86400000), num = a['Agreement#'];
-        BUCKET_KEYS.forEach(function (k) { if (BUCKETS[k](days)) { s.sets[k][num] = 1; s.counts[k]++; s.rmr[k] += rmr; } });
-      });
-      return s;
-    }
-
-    // expiring id-sets when getFiltered() currently returns the Active subset
-    function computeSetsUnderActive() {
-      var rows = window.getFiltered(), seen = {}, today = new Date(); today.setHours(0, 0, 0, 0);
-      var sets = emptySets();
-      rows.forEach(function (a) {
-        var num = a['Agreement#']; if (num == null || seen[num]) return; seen[num] = 1;
-        if (String(a['Agreement Status'] || '').toLowerCase() !== 'active') return;
-        var d = parseD(a['Agreement Expiration Date']); if (!d) return;
-        var days = Math.floor((d - today) / 86400000);
-        BUCKET_KEYS.forEach(function (k) { if (BUCKETS[k](days)) sets[k][num] = 1; });
-      });
-      return sets;
-    }
-
-    function hideNonMatching(set) {
-      [].forEach.call(document.querySelectorAll(LIST + ' .acct-item'), function (it) {
-        var m = (it.textContent || '').match(/#(\d+)/); var num = m ? +m[1] : null;
-        it.style.display = (num != null && set[num]) ? '' : 'none';
-      });
-    }
-    function setActiveChip(key) {
-      [].forEach.call(bar.querySelectorAll('.filter-chip'), function (c) { c.classList.remove('active'); });
-      var chip = chipEl(key); if (chip) chip.classList.add('active');
-    }
-
-    // click an extra chip -> show Active list, then keep only matching agreements
-    function applyExp(key) {
-      expState = key;
-      busy = true; if (mo) mo.disconnect();
-      try {
-        window.setFilter('Active', chipEl('Active'));
-        var sets = computeSetsUnderActive();
-        hideNonMatching(sets[key]);
-        setActiveChip(key);
-        if (lastStats) writeLabels(lastStats);
-      } catch (e) { console.warn('exp', e); }
-      busy = false; reconnectSoon();
-    }
-
-    function writeLabels(s) {
-      lastStats = s;
-      if (!(s.all > 0)) return;
-      [].forEach.call(bar.querySelectorAll('.filter-chip'), function (chip) {
-        var f = chip.getAttribute('data-filter');
-        if (s.counts[f] == null && s[f] == null && !(f in s.rmr)) return;
-        var cnt = (f === 'all') ? s.all : (s[f] != null ? s[f] : s.counts[f]);
-        chip.innerHTML = labelOf(chip) + ' <span class="chip-count">(' + cnt + ')</span>';
-        if (hasRMR && s.rmr[f] != null) chip.title = 'Total RMR: ' + fmtMoney(s.rmr[f]) + '/mo  ·  ' + cnt + ' agmts';
-      });
-    }
-
-    function reconnectSoon() { setTimeout(function () { if (list) mo.observe(list, { childList: true }); }, 60); }
-
-    // main refresh: read full data (force 'all'), compute, then restore the user's view
-    function refresh() {
-      if (busy) return; busy = true; if (mo) mo.disconnect();
-      try {
-        var savedExp = expState, savedNative = null;
-        if (!savedExp) { var ac = bar.querySelector('.filter-chip.active'); savedNative = ac ? ac.getAttribute('data-filter') : 'all'; }
-        window.setFilter('all', chipEl('all'));
-        var s = computeStats();
-        if (savedExp) {
-          window.setFilter('Active', chipEl('Active'));
-          hideNonMatching(s.sets[savedExp]);
-          setActiveChip(savedExp);
-        } else {
-          window.setFilter(savedNative, chipEl(savedNative));
-        }
-        writeLabels(s);
-      } catch (e) { console.warn('chipCounts', e); }
-      busy = false; reconnectSoon();
-    }
-
-    mo = new MutationObserver(function () {
-      if (busy) return;
-      clearTimeout(t); t = setTimeout(function () { if (!busy) refresh(); }, 120);
-    });
-    mo.observe(list, { childList: true });
-
-    window.updateChipCounts = refresh; // manual hook if ever needed
-    refresh();
-  }
-
-  boot();
-})();
-</script>
 
 <!-- ============================================================
      P1 CRM - Terminated-account card in Account Details
