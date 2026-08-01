@@ -6994,7 +6994,7 @@ async function doExportInvoices(){
 }
 </script>
 
-<!-- =========================================================
+<!-- ============================================================
      P1 CRM - Live filter-chip counts + Expiring/Overdue + RMR hover
      Paste this ENTIRE block immediately before the closing </body>
      tag in index.html. Purely additive: it does NOT change your
@@ -7216,5 +7216,74 @@ async function doExportInvoices(){
   boot();
 })();
 </script>
+
+<!-- ============================================================
+     P1 CRM - Terminated-account card in Account Details
+     Additive: for a terminated agreement, shows a card at the top of
+     the Account Details tab with the termination note, date, and who
+     terminated it (read from the agreement's Status History log; falls
+     back to "Other Billing Notes" for older terminations).
+     ============================================================ -->
+<script>
+(function () {
+  function ready() { return document.querySelector('#main-panel') && document.querySelector('#account-list') && typeof window.getFiltered === 'function'; }
+  function boot() {
+    if (!ready()) { return setTimeout(boot, 300); }
+    var mainPanel = document.querySelector('#main-panel'), list = document.querySelector('#account-list');
+    var agMap = {};
+    function mergeData() { try { window.getFiltered().forEach(function (a) { var n = a['Agreement#']; if (n != null) agMap[n] = a; }); } catch (e) {} }
+    mergeData();
+    if (!document.getElementById('termCardStyle')) {
+      var st = document.createElement('style'); st.id = 'termCardStyle';
+      st.textContent = '.term-card{border-left:4px solid #dc3545 !important;background:#fdf2f3 !important;}' +
+        '.term-card .term-card-title{font-weight:700;color:#a71d2a;margin-bottom:6px;font-size:.95rem;}' +
+        '.term-card .term-row{font-size:.82rem;margin:3px 0;color:#333;}' +
+        '.term-card .term-row > span{display:inline-block;min-width:52px;color:#888;font-weight:600;}' +
+        '.term-card .term-row.note{margin-top:6px;white-space:pre-wrap;}';
+      document.head.appendChild(st);
+    }
+    function esc(s) { var d = document.createElement('div'); d.textContent = String(s == null ? '' : s); return d.innerHTML; }
+    function lastTerm(a) {
+      var h = a['Status History'];
+      var arr = Array.isArray(h) ? h : (typeof h === 'string' ? (function () { try { return JSON.parse(h); } catch (e) { return []; } })() : []);
+      var ev = arr.filter(function (e) { return e && (e.action === 'Terminated' || e.to === 'Terminated'); });
+      return ev.length ? ev[ev.length - 1] : null;
+    }
+    function buildCard(a) {
+      var ev = lastTerm(a);
+      var date = a['Agreement Termination Date'] || (ev && (ev.effectiveDate || (ev.at ? String(ev.at).slice(0, 10) : ''))) || '—';
+      var by = (ev && ev.by) ? ev.by : '—';
+      var note = (ev && ev.reason) ? ev.reason : (a['Other Billing Notes'] || '');
+      var div = document.createElement('div'); div.className = 'info-card term-card'; div.id = '__termCard';
+      div.innerHTML = '<div class="term-card-title">⛔ Terminated</div>' +
+        '<div class="term-row"><span>Date</span>' + esc(date) + '</div>' +
+        '<div class="term-row"><span>By</span>' + esc(by) + '</div>' +
+        (note ? '<div class="term-row note"><span>Note</span>' + esc(note) + '</div>' : '<div class="term-row"><span>Note</span><em style="color:#999">none</em></div>');
+      return div;
+    }
+    var busy = false, t = null;
+    function update() {
+      if (busy) return;
+      var m = (mainPanel.innerText || '').match(/Agr\s*#(\d+)/); var num = m ? m[1] : null;
+      var a = num ? agMap[num] : null;
+      var isTerm = a && String(a['Agreement Status'] || '').toLowerCase() === 'terminated';
+      var existing = document.getElementById('__termCard');
+      var cardsRow = mainPanel.querySelector('.cards-row');
+      if (!isTerm || !cardsRow) { if (existing) existing.remove(); return; }
+      if (existing && existing.getAttribute('data-num') === num) return;
+      busy = true; if (existing) existing.remove();
+      var card = buildCard(a); card.setAttribute('data-num', num);
+      cardsRow.parentNode.insertBefore(card, cardsRow);
+      busy = false;
+    }
+    var mo = new MutationObserver(function () { if (busy) return; clearTimeout(t); t = setTimeout(update, 120); });
+    mo.observe(mainPanel, { childList: true, subtree: true });
+    new MutationObserver(function () { mergeData(); }).observe(list, { childList: true });
+    update();
+  }
+  boot();
+})();
+</script>
+
 </body>
 </html>
