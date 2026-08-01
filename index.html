@@ -6995,21 +6995,21 @@ async function doExportInvoices(){
 </script>
 
 <!-- =========================================================
-     P1 CRM - Live filter-chip counts + Expiring/Overdue filters
+     P1 CRM - Live filter-chip counts + Expiring/Overdue + RMR hover
      Paste this ENTIRE block immediately before the closing </body>
      tag in index.html. Purely additive: it does NOT change your
      existing chip HTML, setFilter(), getFiltered() or renderList().
 
-     - Adds a live "(count)" to every chip: All, Active, Terminated,
-       Fire, Burglar, Access.
-     - Adds four new chips:
-         Exp <=90d, Exp <=60d, Exp <=30d  (amber) = ACTIVE agreements
-             expiring within the next N days (measured from today).
-         Overdue                          (red)   = ACTIVE agreements
-             already past their expiration date.
-       Clicking any of them filters the list to just those agreements.
+     - Live "(count)" on every chip: All, Active, Terminated, Fire,
+       Burglar, Access.
+     - Four new chips: Exp <=90d, Exp <=60d, Exp <=30d (amber) and
+       Overdue (red) = ACTIVE agreements expiring within N days /
+       already past expiration. Clicking one filters the list.
+     - HOVER any chip to see the total monthly RMR for the agreements
+       it represents (uses the app's own agreementMonthlyRMR(), so it
+       matches the header and normalizes Annual/Quarterly/etc.).
 
-     Counts recompute automatically whenever the account list
+     Counts + RMR recompute automatically whenever the account list
      re-renders (Load, Refresh from Cloud, Save, generate invoices,
      terminate/reactivate, etc.).
      ============================================================ -->
@@ -7017,14 +7017,12 @@ async function doExportInvoices(){
 (function () {
   var BAR = '#filter-bar', LIST = '#account-list';
 
-  // chip key -> label + style class
   var EXTRA_CHIPS = [
     { key: 'exp90', label: 'Exp ≤90d', cls: 'exp' },
     { key: 'exp60', label: 'Exp ≤60d', cls: 'exp' },
     { key: 'exp30', label: 'Exp ≤30d', cls: 'exp' },
     { key: 'expOverdue', label: 'Overdue', cls: 'exp overdue' }
   ];
-  // predicate per bucket, given days-until-expiration (negative = past due)
   var BUCKETS = {
     exp90: function (days) { return days >= 0 && days <= 90; },
     exp60: function (days) { return days >= 0 && days <= 60; },
@@ -7042,6 +7040,7 @@ async function doExportInvoices(){
     if (!ready()) { return setTimeout(boot, 300); }
     var bar = document.querySelector(BAR), list = document.querySelector(LIST);
     var mo = null, busy = false, expState = null, t = null, lastStats = null;
+    var hasRMR = typeof window.agreementMonthlyRMR === 'function';
 
     if (!document.getElementById('chipCountStyle')) {
       var st = document.createElement('style'); st.id = 'chipCountStyle';
@@ -7067,6 +7066,12 @@ async function doExportInvoices(){
       var m = String(s).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
       return m ? new Date(+m[3], +m[1] - 1, +m[2]) : null;
     }
+    function rmrOf(a) {
+      if (!hasRMR) return 0;
+      var v = window.agreementMonthlyRMR(a['Agreement#']);
+      return (typeof v === 'number' && isFinite(v)) ? v : 0;
+    }
+    function fmtMoney(n) { return '$' + Math.round(n).toLocaleString('en-US'); }
 
     // add the extra chips once
     if (!chipEl('exp90')) {
@@ -7088,8 +7093,8 @@ async function doExportInvoices(){
       }, true);
     });
 
+    function emptyMap(v) { var o = { all: v, Active: v, Terminated: v, Fire: v, Burglar: v, Access: v }; BUCKET_KEYS.forEach(function (k) { o[k] = v; }); return o; }
     function emptySets() { var o = {}; BUCKET_KEYS.forEach(function (k) { o[k] = {}; }); return o; }
-    function emptyCounts() { var o = {}; BUCKET_KEYS.forEach(function (k) { o[k] = 0; }); return o; }
 
     // full-dataset stats (caller must have getFiltered() returning the full set, i.e. filter = all)
     function computeStats() {
@@ -7097,16 +7102,21 @@ async function doExportInvoices(){
       rows.forEach(function (a) { var n = a['Agreement#']; if (n != null && !seen[n]) { seen[n] = 1; uniq.push(a); } });
       var today = new Date(); today.setHours(0, 0, 0, 0);
       var s = { all: uniq.length, Active: 0, Terminated: 0, Fire: 0, Burglar: 0, Access: 0,
-                sets: emptySets(), counts: emptyCounts() };
+                sets: emptySets(), counts: emptyMap(0), rmr: emptyMap(0) };
       uniq.forEach(function (a) {
+        var rmr = rmrOf(a);
         var status = String(a['Agreement Status'] || '').toLowerCase();
-        if (status === 'active') s.Active++; else if (status === 'terminated') s.Terminated++;
+        s.rmr.all += rmr;
+        if (status === 'active') { s.Active++; s.rmr.Active += rmr; }
+        else if (status === 'terminated') { s.Terminated++; s.rmr.Terminated += rmr; }
         var sys = a['System Type'];
-        if (sys === 'Fire') s.Fire++; else if (sys === 'Burglar') s.Burglar++; else if (sys === 'Access') s.Access++;
+        if (sys === 'Fire') { s.Fire++; s.rmr.Fire += rmr; }
+        else if (sys === 'Burglar') { s.Burglar++; s.rmr.Burglar += rmr; }
+        else if (sys === 'Access') { s.Access++; s.rmr.Access += rmr; }
         if (status !== 'active') return;
         var d = parseD(a['Agreement Expiration Date']); if (!d) return;
         var days = Math.floor((d - today) / 86400000), num = a['Agreement#'];
-        BUCKET_KEYS.forEach(function (k) { if (BUCKETS[k](days)) { s.sets[k][num] = 1; s.counts[k]++; } });
+        BUCKET_KEYS.forEach(function (k) { if (BUCKETS[k](days)) { s.sets[k][num] = 1; s.counts[k]++; s.rmr[k] += rmr; } });
       });
       return s;
     }
@@ -7152,12 +7162,13 @@ async function doExportInvoices(){
 
     function writeLabels(s) {
       lastStats = s;
-      var map = { all: s.all, Active: s.Active, Terminated: s.Terminated, Fire: s.Fire, Burglar: s.Burglar, Access: s.Access };
-      BUCKET_KEYS.forEach(function (k) { map[k] = s.counts[k]; });
       if (!(s.all > 0)) return;
       [].forEach.call(bar.querySelectorAll('.filter-chip'), function (chip) {
         var f = chip.getAttribute('data-filter');
-        if (map[f] != null) chip.innerHTML = labelOf(chip) + ' <span class="chip-count">(' + map[f] + ')</span>';
+        if (s.counts[f] == null && s[f] == null && !(f in s.rmr)) return;
+        var cnt = (f === 'all') ? s.all : (s[f] != null ? s[f] : s.counts[f]);
+        chip.innerHTML = labelOf(chip) + ' <span class="chip-count">(' + cnt + ')</span>';
+        if (hasRMR && s.rmr[f] != null) chip.title = 'Total RMR: ' + fmtMoney(s.rmr[f]) + '/mo  ·  ' + cnt + ' agmts';
       });
     }
 
