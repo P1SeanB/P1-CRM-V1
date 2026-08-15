@@ -7,6 +7,46 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- ═══════════ Supabase client + P1 cloud data layer ═══════════ -->
+<!-- =====================================================================
+     Idle timeout that survives closing the browser.
+     The in-app timer below is a setTimeout, so it only runs while the tab
+     is open. This records last activity in localStorage and drops the
+     stored Supabase session at startup when that activity is older than
+     IDLE_MAX. It runs before supabase-js loads, so there is no signed-in
+     flash and no reload.
+     ===================================================================== -->
+<script>
+(function () {
+  var IDLE_MAX  = 2 * 60 * 60 * 1000;                  // 2 hours
+  var KEY       = 'p1crm_last_seen';                   // app-prefixed: this origin is shared with P1-SSE
+  var TOKEN_KEY = 'sb-qltxsccrdudspnznvcot-auth-token';
+
+  function read()  { try { return parseInt(localStorage.getItem(KEY) || '0', 10) || 0; } catch (e) { return 0; } }
+  function write(t){ try { localStorage.setItem(KEY, String(t)); } catch (e) {} }
+
+  // Startup check — synchronous, before the app creates its Supabase client.
+  var last = read();
+  if (last && (Date.now() - last) > IDLE_MAX) {
+    try { localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+    try { sessionStorage.removeItem(TOKEN_KEY); } catch (e) {}
+  }
+  write(Date.now());          // opening the app counts as activity
+
+  // Keep the stamp fresh, throttled so it is not writing on every mousemove.
+  var lastWrite = Date.now();
+  function touch() {
+    var now = Date.now();
+    if (now - lastWrite < 30000) return;               // at most one write per 30s
+    lastWrite = now;
+    write(now);
+  }
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart'].forEach(function (ev) {
+    document.addEventListener(ev, touch, { passive: true, capture: true });
+  });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) touch(); });
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ┌──────────────────────────────────────────────────────────────┐
