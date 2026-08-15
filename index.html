@@ -7661,34 +7661,28 @@ window.P1CR_CONFIG = {
 
 <script>
 /* ── Add "Request a Change / Suggestion" to the Data / Tools dropdown ──
-   Appends a divider and an item using the menu's own dd-sep / dd-item classes. */
+   Uses the menu's own hdd-item styling and sits just above the divider,
+   so Sign out stays at the bottom. */
 (function () {
   function build() {
     if (document.getElementById('p1-dd-cr')) return true;
     if (!window.P1CR) return false;
-    var btn = [].slice.call(document.querySelectorAll('button, a'))
-      .filter(function (b) { return /Data\s*\/\s*Tools/.test(b.textContent || ''); })[0];
-    if (!btn) return false;
-    var menu = btn.parentElement && btn.parentElement.querySelector('.dd-menu');
-    if (!menu) menu = document.querySelector('.dd-menu');
+    var menu = document.querySelector('.hdd-menu');
     if (!menu) return false;
-
-    var sep = document.createElement('div');
-    sep.className = 'dd-sep';
-    menu.appendChild(sep);
 
     var item = document.createElement('button');
     item.type = 'button';
     item.id = 'p1-dd-cr';
-    item.className = 'dd-item';
-    item.textContent = 'Request a Change / Suggestion';
+    item.className = 'hdd-item';
+    item.textContent = '\uD83D\uDCDD Request a Change / Suggestion';
     item.addEventListener('click', function () {
-      var open = menu.closest('.dd, .dropdown') || menu.parentElement;
-      if (open) open.classList.remove('on', 'open', 'active', 'show');
-      menu.style.display = '';
+      var wrap = menu.closest('.hdd');
+      if (wrap) wrap.classList.remove('open');
       P1CR.open();
     });
-    menu.appendChild(item);
+
+    var sep = menu.querySelector('.hdd-sep');
+    if (sep) menu.insertBefore(item, sep); else menu.appendChild(item);
     return true;
   }
   var t = setInterval(function () { if (build()) clearInterval(t); }, 300);
