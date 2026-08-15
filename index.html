@@ -7639,5 +7639,61 @@ async function doExportInvoices(){
 })();
 </script>
 
+<!-- =====================================================================
+     P1-CRM — Change Request Log hookup
+     Requests land in this project’s own cr_ tables (separate from P1-SSE).
+     ===================================================================== -->
+
+<script>
+window.P1CR_CONFIG = {
+  app: 'P1-CRM',
+  autoButton: false,               // the option lives in the Data / Tools menu
+  url: 'https://qltxsccrdudspnznvcot.supabase.co',
+  key: 'sb_publishable_Sz7JzpRpHy7a_INZ1qAzzQ_x9brZbeZ',
+  page: function () {
+    var t = document.querySelector('.tab.active, .view-tab.active, [role="tab"][aria-selected="true"]');
+    return t ? t.textContent.trim() : null;
+  }
+};
+</script>
+
+<script src="https://p1seanb.github.io/P1-CRM-V1/change-request.js"></script>
+
+<script>
+/* ── Add "Request a Change / Suggestion" to the Data / Tools dropdown ──
+   Appends a divider and an item using the menu's own dd-sep / dd-item classes. */
+(function () {
+  function build() {
+    if (document.getElementById('p1-dd-cr')) return true;
+    if (!window.P1CR) return false;
+    var btn = [].slice.call(document.querySelectorAll('button, a'))
+      .filter(function (b) { return /Data\s*\/\s*Tools/.test(b.textContent || ''); })[0];
+    if (!btn) return false;
+    var menu = btn.parentElement && btn.parentElement.querySelector('.dd-menu');
+    if (!menu) menu = document.querySelector('.dd-menu');
+    if (!menu) return false;
+
+    var sep = document.createElement('div');
+    sep.className = 'dd-sep';
+    menu.appendChild(sep);
+
+    var item = document.createElement('button');
+    item.type = 'button';
+    item.id = 'p1-dd-cr';
+    item.className = 'dd-item';
+    item.textContent = 'Request a Change / Suggestion';
+    item.addEventListener('click', function () {
+      var open = menu.closest('.dd, .dropdown') || menu.parentElement;
+      if (open) open.classList.remove('on', 'open', 'active', 'show');
+      menu.style.display = '';
+      P1CR.open();
+    });
+    menu.appendChild(item);
+    return true;
+  }
+  var t = setInterval(function () { if (build()) clearInterval(t); }, 300);
+})();
+</script>
+<!-- ============================ end block ============================= -->
 </body>
 </html>
